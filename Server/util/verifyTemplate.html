@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        position: relative;
+        padding: 0;
+        margin: 0;
+        width: 400px;
+        display: block;
+        margin: auto;
+        box-sizing: border-box;
+      }
+
+      .body {
+        position: relative;
+        background: rgb(253, 214, 99);
+        width: 400px;
+        border: 0.5mm solid rgba(0, 0, 0, 0.075);
+        display: block;
+        margin: auto;
+        box-sizing: border-box;
+      }
+
+      .header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: serif;
+        font-size: x-large;
+        letter-spacing: 2px;
+        padding-top: 30px;
+      }
+
+      .header img {
+        width: 40px;
+      }
+
+      .big-title {
+        box-sizing: border-box;
+        padding: 30px 40px;
+        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        width: 100%;
+        text-align: center;
+        font-size: 45px;
+        font-weight: 700;
+      }
+
+      .btn {
+        display: block;
+        margin: auto;
+        width: fit-content;
+        padding: 7px 18px;
+        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif,
+          sans-serif;
+        border-radius: 6mm;
+        background: rgb(34, 34, 34);
+        border: 0.2mm solid rgba(255, 255, 255, 0.6);
+        font-size: 20px;
+        color: white !important;
+        text-decoration: none;
+        letter-spacing: 1px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+
+      .main-img {
+        width: 80%;
+        margin: auto;
+        display: block;
+        margin-top: 15px;
+        margin-bottom: 15px;
+      }
+
+      .small-text {
+        box-sizing: border-box;
+        padding: 10px;
+        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        width: 100%;
+        text-align: center;
+        font-size: large;
+        font-weight: 500;
+      }
+
+      .other-link {
+        word-wrap: break-word;
+        width: 90%;
+        margin: auto;
+        display: block;
+      }
+
+      span {
+        margin: auto;
+        display: block;
+        width: 100%;
+        text-align: center;
+        font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
+        font-size: large;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section class="body">
+      <div class="header">
+        <img src="./images/favicon.ico" alt="" />
+        KLHCode
+      </div>
+      <div class="big-title">
+        Thank you <br />
+        for registering
+      </div>
+      <a href="{{clientUrl}}/verify?email={{email}}&token={{token}}" class="btn"
+        >Verify Account</a
+      >
+      <img src="./images/email-image.svg" alt="" class="main-img" />
+      <div class="small-text">
+        or Click the link below to verify your account
+      </div>
+      <a
+        href="{{clientUrl}}/verify?email={{email}}&token={{token}}"
+        class="other-link"
+        >{{clientUrl}}/verify?email={{email}}&token={{token}}</a
+      >
+      <a href="{{clientUrl}}" class="btn">Visit KLHCode</a>
+      <br />
+      <span>Copyright@ KLHCode</span>
+    </section>
+  </body>
+</html>
