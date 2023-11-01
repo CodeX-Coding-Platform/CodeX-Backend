@@ -14,26 +14,16 @@ module.exports = (app) => {
     );
 
     // Retrieve all questions
-    app.get("/questions", middleware.checkTokenAdmin, questions.findAll);
-
-    // Retrieve a single questionName with questionId Public
-    app.get("/questions/name/:questionId", questions.getQuestionName);
+    app.get("/questions", middleware.checkTokenAdmin, questions.getAllQuestions);
 
     // Retrieve a single question with questionId
-    app.get("/questions/:questionId", middleware.checkToken, questions.findOne);
+    app.get("/questions/:questionId", middleware.checkToken, questions.findOneQuestion);
 
-    // Retrieve all questions with contestId only
-    app.get(
-        "/questions/contest/:contestId",
-        middleware.checkToken,
-        questions.findContestQuestions
-    );
-
-    // Retrieve all questions with contestId and update Participation
+    // Retrieve all questions with contestId and create/update Participation
     app.get(
         "/questions/contests/:contestId",
         middleware.checkToken,
-        questions.findAllContest
+        questions.getAllQuestionsRelatedToContest
     );
 
     //Delete multiple questions
@@ -44,12 +34,12 @@ module.exports = (app) => {
     );
 
     // Update a question with questionId
-    app.post("/questions/:questionId", middleware.checkTokenAdmin, questions.update);
+    app.post("/questions/:questionId", middleware.checkTokenAdmin, questions.updateQuestion);
 
     // Delete a question with questionId
     app.delete(
         "/questions/:questionId",
         middleware.checkTokenAdmin,
-        questions.delete
+        questions.deleteQuestion
     );
 };

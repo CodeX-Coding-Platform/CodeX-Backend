@@ -1,5 +1,24 @@
 const Contest = require("../models/contest.model.js");
 
+
+const getOneContest = async(contestId) => {
+    try {
+        const contest = await Contest.findOne({contestId: contestId});
+        return contest;
+    } catch(error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
+const getAllContests = async() => {
+    try {
+        const contests = await Contest.find({});
+        return contests;
+    } catch(error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
 const updateContest =  async(contestId, contestUpdates) => {
 
     if (contestUpdates.contestId) {
@@ -20,6 +39,9 @@ const updateContest =  async(contestId, contestUpdates) => {
 const deleteContest = async(contestId) => {
     try {
         const deletedContest = await Contest.deleteOne({contestId: contestId});
+        if(deletedContest.deletedCount === 0) {
+            return Promise.reject(new Error("Contest not found with given contestId "+contestId));
+        }
         return deletedContest;
     } catch(err) {
         return Promise.reject(new Error(err.message));
@@ -46,5 +68,7 @@ const isContestActive = async (contest) => {
 module.exports = {
     isContestActive,
     updateContest,
-    deleteContest
+    deleteContest,
+    getAllContests,
+    getOneContest
 }

@@ -2,30 +2,38 @@ const Question = require("../models/question.model.js");
 const Contest = require("../models/contest.model.js");
 const Counter = require("../models/counter.model.js");
 const Participation = require("../models/participation.model.js");
+
 const xlsx = require("xlsx");
-const contests = require("./contest.controller.js");
-const participations = require("./participation.controller.js");
+
+const questionUtil = require("../services/questionUtil.js");
+const contestUtil = require("../services/contestUtil.js");
+const responseUtil = require("../services/responseUtil.js");
+
+const dotenv = require("dotenv");
+dotenv.config({ path: "../util/config.env" });
+
+var questionCode = process.env.questionCode
+
+var testcasesFilter = { questionHiddenInput1: 0, questionHiddenInput2: 0, questionHiddenInput3: 0, questionHiddenOutput1: 0, questionHiddenOutput1: 0, questionHiddenOutput3: 0 }
+
 // const Base64 = require('js-base64').Base64;
 // Create and Save a new question
 exports.create = async (req, res) => {
   // Validate request
-
+  if (!req.body.questionId) {
+    return responseUtil.sendResponse(res, false, null, "QuestionId can not be empty", 400);
+  }
   if (!req.body.questionName) {
-    return res.status(400).send({
-      success: false,
-      message: "Question name can not be empty",
-    });
+    return responseUtil.sendResponse(res, false, null, "Question name can not be empty", 400);
   }
   try {
     const counter = await Counter.findOne();
-    const questionId =
-      "KLHCODE" + (Number(counter.questionCount) + 1).toString();
+    const questionId = questionCode + (Number(counter.questionCount) + 1).toString();
     counter.questionCount = Number(counter.questionCount) + 1;
     const updatedCounter = await counter.save();
     const question = new Question({
       questionId: questionId,
       questionName: req.body.questionName,
-      contestId: req.body.contestId,
       questionDescriptionText: req.body.questionDescriptionText,
       questionInputText: req.body.questionInputText,
       questionOutputText: req.body.questionOutputText,
@@ -50,30 +58,10 @@ exports.create = async (req, res) => {
     });
 
     // Save Question in the database
-    question
-      .save()
-      .then((data) => {
-        res.send({
-          success: true,
-          message: "Question Created Successfully ",
-          questionData: data,
-          countersData: updatedCounter,
-        });
-      })
-      .catch((err) => {
-        res.status(500).send({
-          success: false,
-          message:
-            err.message || "Some error occurred while creating the Question.",
-        });
-      });
-  } catch (err) {
-    res.status(500).send({
-      success: false,
-      message:
-        err.message ||
-        "Some error occurred while fetching counters, please check if counters are created or not",
-    });
+    const newQuestion = await question.save();
+    return responseUtil.sendResponse(res, true, newQuestion, "Question created successfully with questionId " + questionId, 201);
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Some error occurred while saving question to db", 500);
   }
   // Create a Question
 };
@@ -148,290 +136,106 @@ exports.createExcel = (req, res) => {
   }
 };
 
-exports.getAllQuestions = async (req) => {
+// Retrieve and return all questions from the database.
+exports.getAllQuestions = async (req, res) => {
   try {
-    const questions = await Question.find({ contestId: req.cookies.contestId });
-    if (!questions) {
-      throw "Questions not found";
-    }
-    return questions;
-  } catch (err) {
-    if (err.kind === "ObjectId") {
-      throw "Questions not found";
-    }
-    throw "Error retrieving questions";
+    const questions = await questionUtil.getAllQuestions(testcasesFilter);
+    return responseUtil.sendResponse(res, true, questions, "Questions retrieved successfully", 200);
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
   }
 };
 
-// Retrieve and return all questions from the database.
-exports.findAll = (req, res) => {
-  Question.find(
-    {},
-    { questionId: 1, questionName: 1, topic: 1, company: 1, difficulty: 1 }
-  )
-    .then((questions) => {
-      res.send(questions);
-    })
-    .catch((err) => {
-      res.status(500).send([]);
-    });
-};
-
 // Find a single question with a questionId
-exports.findOne = (req, res) => {
-  Question.find({ questionId: req.params.questionId })
-    .then((question) => {
-      if (!question) {
-        return res.status(404).send({
-          success: false,
-          message: "Question not found with id " + req.params.questionId,
-        });
-      }
-      res.send(question);
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "Question not found with id " + req.params.questionId,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error retrieving question with id " + req.params.questionId,
-      });
-    });
-};
-
-exports.getQuestionName = (req, res) => {
-  Question.find(
-    { questionId: req.params.questionId },
-    { questionName: 1, _id: 0 }
-  )
-    .then((question) => {
-      if (!question) {
-        return res.status(404).send({
-          success: false,
-          message: "Question not found with id " + req.params.questionId,
-        });
-      }
-      let response = {
-        questionName: question[0].questionName,
-      };
-      res.send(response);
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "Question not found with id " + req.params.questionId,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error retrieving question with id " + req.params.questionId,
-      });
-    });
-};
-// Find testcases with questionId
-exports.getTestCases = async (req) => {
+exports.findOneQuestion = async (req, res) => {
   try {
-    const question = await Question.findOne({
-      questionId: req.body.questionId,
-    });
-
-    if (!question) {
-      throw new Error("Couldn't find question");
+    if(!req.query.questionId) {
+      return responseUtil.sendResponse(res, false, null, "questionId is not provided", 400); 
     }
-
-    const testcases = {
-      contestId: question.contestId,
-      HI1: question.questionHiddenInput1,
-      HI2: question.questionHiddenInput2,
-      HI3: question.questionHiddenInput3,
-      HO1: question.questionHiddenOutput1,
-      HO2: question.questionHiddenOutput2,
-      HO3: question.questionHiddenOutput3,
-      difficulty: question.difficulty,
-      language: question.language,
-      courseId: question.courseId,
-    };
-
-    return testcases;
-  } catch (err) {
-    if (err.kind === "ObjectId") {
-      throw new Error("Couldn't find question, caught exception");
-    }
-    throw new Error("Error retrieving data");
+    const question = await questionUtil.getOneQuestion(req.params.questionId, testcasesFilter);
+    return responseUtil.sendResponse(res, true, question, "Question retrieved successfully", 200); 
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
   }
 };
 
 // Update a question identified by the questionId in the request
-exports.update = (req, res) => {
-  if (!req.body.questionId) {
-    return res.status(400).send({
-      success: false,
-      message: "QuestionId can not be empty",
-    });
+exports.updateQuestion = async (req, res) => {
+  if (!req.params.questionId) {
+    return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
   }
-  // Find question and update it with the request body
-  Question.findOneAndUpdate(
-    { questionId: req.params.questionId },
-    {
-      $set: {
-        questionId: req.body.questionId,
-        questionName: req.body.questionName,
-        contestId: req.body.contestId,
-        questionDescriptionText: req.body.questionDescriptionText,
-        questionInputText: req.body.questionInputText,
-        questionOutputText: req.body.questionOutputText,
-        questionExampleInput1: req.body.questionExampleInput1,
-        questionExampleOutput1: req.body.questionExampleOutput1,
-        questionExampleInput2: req.body.questionExampleInput2,
-        questionExampleOutput2: req.body.questionExampleOutput2,
-        questionExampleInput3: req.body.questionExampleInput3,
-        questionExampleOutput3: req.body.questionExampleOutput3,
-        questionHiddenInput1: req.body.questionHiddenInput1,
-        questionHiddenInput2: req.body.questionHiddenInput2,
-        questionHiddenInput3: req.body.questionHiddenInput3,
-        questionHiddenOutput1: req.body.questionHiddenOutput1,
-        questionHiddenOutput2: req.body.questionHiddenOutput2,
-        questionHiddenOutput3: req.body.questionHiddenOutput3,
-        questionExplanation: req.body.questionExplanation,
-        author: req.body.author,
-        editorial: req.body.editorial,
-        difficulty: req.body.difficulty,
-      },
-    },
-    { new: true }
-  )
-    .then((question) => {
-      if (!question) {
-        return res.status(404).send({
-          success: false,
-          message: "Question not found with id " + req.params.questionId,
-        });
-      }
-      res.status(200).send({
-        success: true,
-        questionId: req.params.questionId,
-        message: "Updated Successfully",
-      });
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "Question not found with id " + req.params.questionId,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error updating Question with id " + req.params.questionId,
-      });
-    });
+  try {
+    const updatedQuestion = await questionUtil.updateQuestion(req.params.questionId, req.body);
+    return responseUtil.sendResponse(res, true, updatedQuestion, "Question updated successfully", 200); 
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Error while updating Question with questionId "+req.body.questionId, 500);
+  }
 };
 
 // Delete a question with the specified questionId in the request
-exports.delete = (req, res) => {
-  Question.findOneAndRemove({ questionId: req.params.questionId })
-    .then((question) => {
-      if (!question) {
-        return res.status(404).send({
-          success: false,
-          message: "question not found with id " + req.params.questionId,
-        });
-      }
-      res.send({ message: "question deleted successfully!" });
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId" || err.name === "NotFound") {
-        return res.status(404).send({
-          success: false,
-          message: "question not found with id " + req.params.questionId,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Could not delete question with id " + req.params.questionId,
-      });
-    });
+exports.deleteQuestion = async (req, res) => {
+  if (!req.params.questionId) {
+    return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
+  }
+  try {
+    const deletedQuestion = await questionUtil.deleteQuestion(req.params.questionId);
+    return responseUtil.sendResponse(res, true, deletedQuestion, "Question deleted successfully", 200); 
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Error while deleting Question with questionId "+req.params.questionId, 500);
+  }
 };
 
 // Delete questions with the specified questionIds in the request
 exports.deleteMultiple = (req, res) => {
-  questionIds = req.params.questionIds
-    .split(",")
-    .filter((item) => !item.includes("-"))
-    .map((item) => item.trim());
-  Question.deleteMany({ questionId: { $in: questionIds } })
-    .then((question) => {
-      if (!question) {
-        return res.status(404).send({
-          success: false,
-          message: "question not found with id " + req.params.questionId,
-        });
-      }
-      res.send({ message: "questions deleted successfully!" });
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId" || err.name === "NotFound") {
-        return res.status(404).send({
-          success: false,
-          message: "question not found with id " + req.params.questionId,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Could not delete question with id " + req.params.questionId,
-      });
-    });
+  if (!req.params.questionIds) {
+    return responseUtil.sendResponse(res, false, null, "QuestionIds cannot be empty", 400);
+  }
+  try {
+    var questionIds = req.params.questionIds.split(",").filter((item) => !item.includes("-")).map((item) => item.trim());
+    const deletedQuestions = questionUtil.deleteMultipleQuestions(questionIds);
+    return responseUtil.sendResponse(res, true, deletedQuestions, "Questions deleted successfully", 200); 
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Error while deleting questions", 500);
+  }
 };
 
-exports.findAllContest = async(req,res) => {
+exports.  getAllQuestionsRelatedToContest = async (req, res) => {
+  if (!req.params.contestId) {
+    return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
+  }
   try {
-    const contest = await Contest.findOne({ contestId: req.params.contestId });
+    const contest = await contestUtil.getOneContest(req.params.contestId);
     var questionsList = contest.questionsList || [];
-    if(contest.isManual) {
+    if (contest.isManual) {
       try {
-        const questions = await Question.find({questionId : {$in: questionsList} });
-        return res.status(200).send({
-          success : true,
-          data : questions,
-          message : "Questions fetched for Manual Contest with ContestId "+req.params.contestId,
-        })
-      } catch(err) {
-        return res.status(500).send({
-          success : false,
-          message : "Questions could not fetched for Manual Contest with ContestId "+req.params.contestId+" due to error ",
-        })
+        const questions = await questionUtil.getMultipleQuestions(questionsList, testcasesFilter);
+        return responseUtil.sendResponse(res, true, questions, "Questions fetched for Manual Contest with ContestId " + req.params.contestId, 200);
+      } catch (error) {
+        return responseUtil.sendResponse(res, false, null, "Questions could not fetched for Manual Contest with ContestId " + req.params.contestId + " due to error ", 500);
       }
-    } else if(contest.isMultipleSet) {
+    } else if (contest.isMultipleSet) {
       try {
-        const participation = await Participation.findOne({participationId : req.body.username.toLowerCase()+req.params.contestId});
-        if(participation.questions !== null && participation.questions.length !== 0) {
+        const participation = await Participation.findOne({ participationId: req.body.username.toLowerCase() + req.params.contestId });
+        if (participation.questions !== null && participation.questions.length !== 0) {
           try {
-            const questions = await Question.find({questionId : {$in: participation.questions} });
-            return res.status(200).send({
-              success : true,
-              data : questions,
-              message : "Questions fetched for Manual Contest with ContestId "+req.params.contestId,
-            })
-          } catch(err) {
+            const questions = await questionUtil.getMultipleQuestions(participation.questions, testcasesFilter);
+            return responseUtil.sendResponse(res, true, questions, "Questions fetched for MultipleSet Contest with ContestId " + req.params.contestId, 200);
+
+          } catch (err) {
             return res.status(500).send({
-              success : false,
-              message : "Questions could not fetched for Manual Contest with ContestId "+req.params.contestId+" due to error ",
+              success: false,
+              message: "Questions could not fetched for Manual Contest with ContestId " + req.params.contestId + " due to error ",
             })
           }
         } else {
           const sets = contest.sets;
-          if(sets == null) {
+          if (sets == null) {
             return res.status(500).send({
-              success : false,
-              message : "Sets are empty for MultipleSet Contest with ContestId "+req.params.contestId,
+              success: false,
+              message: "Sets are empty for MultipleSet Contest with ContestId " + req.params.contestId,
             })
           }
-          for(var index in sets) {
+          for (var index in sets) {
             const randomIndex = Math.floor(Math.random() * (sets[index].length));
             questionsList.push(sets[index][randomIndex]);
           }
@@ -439,36 +243,36 @@ exports.findAllContest = async(req,res) => {
             participation.questions = questionsList;
             await participation.save();
             try {
-              const questions = await Question.find({questionId : {$in: questionsList} });
+              const questions = await Question.find({ questionId: { $in: questionsList } });
               return res.status(200).send({
-                success : true,
-                data : questions,
-                message : "Questions fetched for Manual Contest with ContestId "+req.params.contestId,
+                success: true,
+                data: questions,
+                message: "Questions fetched for Manual Contest with ContestId " + req.params.contestId,
               })
-            } catch(err) {
+            } catch (err) {
               return res.status(500).send({
-                success : false,
-                message : "Questions could not fetched for Manual Contest with ContestId "+req.params.contestId+" due to error ",
+                success: false,
+                message: "Questions could not fetched for Manual Contest with ContestId " + req.params.contestId + " due to error ",
               })
             }
-          } catch(err) {
+          } catch (err) {
             return res.status(500).send({
-              success : false,
-              message : "Error while updating Participation with ContestId "+req.params.contestId+" due to error "+err.message,
+              success: false,
+              message: "Error while updating Participation with ContestId " + req.params.contestId + " due to error " + err.message,
             })
           }
         }
-      } catch(err) {
+      } catch (err) {
         return res.status(500).send({
-          success : false,
-          message : "Could not fetch participation with id "+req.body.username+req.params.contestId,
+          success: false,
+          message: "Could not fetch participation with id " + req.body.username + req.params.contestId,
         })
       }
     }
-  } catch(err) {
+  } catch (err) {
     return res.status(500).send({
-      success : false,
-      message : "Could not fetch Contest with id "+req.params.contestId+" due to error "+err.message,
+      success: false,
+      message: "Could not fetch Contest with id " + req.params.contestId + " due to error " + err.message,
     })
   }
 }

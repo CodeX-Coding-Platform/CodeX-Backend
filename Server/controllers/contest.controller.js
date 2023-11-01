@@ -1,12 +1,12 @@
 const Contest = require("../models/contest.model.js");
-const Question = require("../models/question.model.js");
 const Counter = require("../models/counter.model.js");
+
 const contestUtil = require("../services/contestUtil.js");
 const questionUtil = require("../services/questionUtil.js");
+const responseUtil = require("../services/responseUtil.js");
+
 const dotenv = require("dotenv");
-const axios = require("axios");
 dotenv.config({ path: "../util/config.env" });
-const xlsx = require("xlsx");
 
 var contestCode = process.env.contestCode
 
@@ -18,18 +18,21 @@ exports.createContest = async (req, res) => {
     const updatedCounter = await counter.save();
     var questionsList = [];
     //In case of manual
-    if(req.body.isManual) {
+    if (req.body.isManual) {
+      const areQuestionIdsValid = await questionUtil.isValidQuestionIds(req.body.questionsList);
+      if (!areQuestionIdsValid) {
+        return responseUtil.sendResponse(res, false, null, "Contest Creation failed due to invalid questionIds", 400);
+      }
       questionsList = questionsList.concat(req.body.questionsList);
     }
-    if(req.body.isMultipleSet) {
+    //In case of MultipleSet
+    if (req.body.isMultipleSet) {
       var flattenedSets = req.body.sets.flat();
       const uniqueSet = new Set(flattenedSets);
+      //check if all questionIds are valid or not
       const areQuestionIdsValid = await questionUtil.isValidQuestionIds(Array.from(uniqueSet));
-      if(!areQuestionIdsValid) {
-        return res.status(500).send({
-          success : false,
-          message : "Contest Creation failed due to invalid questionIds in sets"
-        });
+      if (!areQuestionIdsValid) {
+        return responseUtil.sendResponse(res, false, null, "Contest Creation failed due to invalid questionIds in sets", 400);
       }
     }
     const contest = new Contest({
@@ -39,163 +42,106 @@ exports.createContest = async (req, res) => {
       contestDuration: req.body.contestDuration,
       contestStartTime: req.body.contestStartTime,
       contestEndTime: req.body.contestEndTime,
-      isManual : req.body.isManual,
-      questionsList : questionsList,
-      isMultipleSet : req.body.isMultipleSet,
-      sets : (req.body.isMultipleSet == true)? req.body.sets : null,
+      isManual: req.body.isManual,
+      questionsList: questionsList,
+      isMultipleSet: req.body.isMultipleSet,
+      sets: (req.body.isMultipleSet == true) ? req.body.sets : null,
       sections: req.body.sections,
       contestPassword: req.body.contestPassword,
       visibility: req.body.visibility == "on",
     });
 
     const newContest = await contest.save();
-    return res.status(200).send({
-      success : true,
-      message : "New Contest with "+contestId+" is created!",
-      date : newContest
-    });
-  } catch(err) {
-    return res.status(500).send({
-      success : false,
-      message : "Contest Creation failed with error "+err.message
-    });
+    return responseUtil.sendResponse(res, true, newContest, "New Contest with " + contestId + " is created!", 201);
+
+  } catch (err) {
+    return responseUtil.sendResponse(res, false, null, "Contest Creation failed with error " + err.message, 500);
   }
 }
 
 // Retrieve and return all contests from the database.
 exports.getAllContests = async (req, res) => {
   try {
-    const contests = await Contest.find({});
-    res.status(200).send({
-      success: true,
-      data : contests
-    });
-  } catch(error) {
-    res.status(404).send({
-      success: false,
-      message: "An error occurred while fetching all contests"
-    });
+    const contests = await contestUtil.getAllContests();
+    responseUtil.sendResponse(res, true, contests, "All contests fetched successfully!", 200);
+  } catch (error) {
+    responseUtil.sendResponse(res, false, null, "An error occurred while fetching all contests", 500);
   }
 };
+
 
 //check whether contest is active
 exports.activeContest = async (req, res) => {
   try {
-    const contest = await Contest.findOne({ contestId: req.params.contestId });
-
-    const isContestActive = await contestUtil.isContestActive(contest);
-
-    if (isContestActive || req.decoded.admin) {
-      res.status(200).send({
-        success: true,
-        message: "Contest window is open!"
-      });
-    } else {
-      res.status(404).send({
-        success: false,
-        message: "Contest window isn't open!"
-      });
+    if (!req.params.contestId) {
+      return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
     }
+    const contest = await contestUtil.getOneContest(req.params.contestId);
+    const isContestActive = await contestUtil.isContestActive(contest);
+    
+    if (isContestActive || req.decoded.admin) {
+      return responseUtil.sendResponse(res, true, isContestActive, "Contest window is open!", 200);
+    } else {
+      return responseUtil.sendResponse(res, false, null, "Contest window isn't open!", 400);
+    }
+
   } catch (error) {
-    res.status(404).send({
-      success: false,
-      message: "An error occurred while checking the contest status."
-    });
+    return responseUtil.sendResponse(res, false, null, "An error occurred while checking the contest status.", 500);
   }
 };
 
 // Find a single contest with a contestId
 exports.findOneContest = async (req, res) => {
   try {
-    const contest = await Contest.findOne({contestId : req.params.contestId});
+    if (!req.params.contestId) {
+      return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
+    }
+    const contest = await contestUtil.getOneContest(req.params.contestId);
     if (!contest) {
-      return res.status(404).send({
-        success: false,
-        message: "Contest not found with id " + req.params.contestId,
-      });
+      return responseUtil.sendResponse(res, false, null, "Contest not found with id " + req.params.contestId, 400);
     }
-    res.status(200).send({
-      success : true,
-      data : contest
-    });
+    return responseUtil.sendResponse(res, true, contest, "Contest successfully retrieved with id " + req.params.contestId, 200);
 
-  } catch(error) {
-    if (err.kind === "ObjectId") {
-      return res.status(404).send({
-        success: false,
-        message: "Contest not found with id " + req.params.contestId,
-        data : null
-      });
+  } catch (error) {
+    if (error.kind === "ObjectId") {
+      return responseUtil.sendResponse(res, false, null, "Contest not found with id " + req.params.contestId, 400);
     }
-    return res.status(500).send({
-      success: false,
-      message: "Error retrieving contest with id " + req.params.contestId,
-      data : null
-    });
+    return responseUtil.sendResponse(res, false, null, "Error retrieving contest with id " + req.params.contestId, 500);
   }
 };
 
 exports.updateContest = async (req, res) => {
   try {
-    if(!req.params.contestId) {
-      return res.status(404).send({
-        success: false,
-        message: "ContestId is not provided",
-      });
+    if (!req.params.contestId) {
+      return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
     }
-    const updatedContest = await contestUtil.updateContest(req.params.contestId,req.body);
+    const updatedContest = await contestUtil.updateContest(req.params.contestId, req.body);
     if (updatedContest) {
-      res.status(200).send({
-        success: true,
-        message: "Contest updated successfully.",
-        data : updatedContest
-      });
+      return responseUtil.sendResponse(res, true, updatedContest, "Contest updated successfully.", 200);
     } else {
-      res.status(404).send({
-        success: false,
-        message: "Contest not found with id " + req.params.contestId,
-      });
+      return responseUtil.sendResponse(res, false, null, "Contest not found with id " + req.params.contestId, 400);
     }
-  } catch (err) {
-    if (err.kind === "ObjectId") {
-      return res.status(404).send({
-        success: false,
-        message: "Contest not found with id " + req.params.contestId,
-      });
+  } catch (error) {
+    if (error.kind === "ObjectId") {
+      return responseUtil.sendResponse(res, false, null, "Contest not found with id " + req.params.contestId, 400);
     }
-    return res.status(500).send({
-      success: false,
-      message: "Error updating Contest with id " + req.params.contestId + " due to "+err.message,
-    });
+    return responseUtil.sendResponse(res, false, null, "Error updating contest with id " + req.params.contestId, 500);
   }
 };
 
 exports.deleteContest = async (req, res) => {
   try {
+    if (!req.params.contestId) {
+      return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
+    }
     const deletedContest = await contestUtil.deleteContest(req.params.contestId);
     if (deletedContest) {
-      res.status(200).send({
-        success: true,
-        message: "Contest deleted successfully.",
-        data : deletedContest
-      });
+      return responseUtil.sendResponse(res, true, deletedContest, "Contest deleted successfully.", 200);
     } else {
-      res.status(404).send({
-        success: false,
-        message: "Contest not found with id " + req.params.contestId,
-      });
+      return responseUtil.sendResponse(res, false, null, "Contest not found with id " + req.params.contestId, 400);
     }
-  } catch (err) {
-    if (err.kind === "ObjectId") {
-      return res.status(404).send({
-        success: false,
-        message: "Contest not found with id " + req.params.contestId,
-      });
-    }
-    return res.status(500).send({
-      success: false,
-      message: "Error updating Contest with id " + req.params.contestId + " due to "+err.message,
-    });
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, error.message, 500);
   }
 };
 
