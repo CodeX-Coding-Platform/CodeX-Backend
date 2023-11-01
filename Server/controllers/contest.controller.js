@@ -47,8 +47,7 @@ exports.createContest = async (req, res) => {
       isMultipleSet: req.body.isMultipleSet,
       sets: (req.body.isMultipleSet == true) ? req.body.sets : null,
       sections: req.body.sections,
-      contestPassword: req.body.contestPassword,
-      visibility: req.body.visibility == "on",
+      contestPassword: req.body.contestPassword
     });
 
     const newContest = await contest.save();

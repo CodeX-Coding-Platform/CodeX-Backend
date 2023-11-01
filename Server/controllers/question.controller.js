@@ -6,6 +6,7 @@ const Participation = require("../models/participation.model.js");
 const xlsx = require("xlsx");
 
 const questionUtil = require("../services/questionUtil.js");
+const participationUtil = require("../services/participationUtil.js");
 const contestUtil = require("../services/contestUtil.js");
 const responseUtil = require("../services/responseUtil.js");
 
@@ -14,7 +15,7 @@ dotenv.config({ path: "../util/config.env" });
 
 var questionCode = process.env.questionCode
 
-var testcasesFilter = { questionHiddenInput1: 0, questionHiddenInput2: 0, questionHiddenInput3: 0, questionHiddenOutput1: 0, questionHiddenOutput1: 0, questionHiddenOutput3: 0 }
+var testcasesFilter = { questionHiddenInput1: 0, questionHiddenInput2: 0, questionHiddenInput3: 0, questionHiddenOutput1: 0, questionHiddenOutput2: 0, questionHiddenOutput3: 0 }
 
 // const Base64 = require('js-base64').Base64;
 // Create and Save a new question
@@ -195,85 +196,65 @@ exports.deleteMultiple = (req, res) => {
     const deletedQuestions = questionUtil.deleteMultipleQuestions(questionIds);
     return responseUtil.sendResponse(res, true, deletedQuestions, "Questions deleted successfully", 200); 
   } catch (error) {
-    return responseUtil.sendResponse(res, false, null, "Error while deleting questions", 500);
+    return responseUtil.sendResponse(res, false, null, error.message, 500);
   }
 };
 
-exports.  getAllQuestionsRelatedToContest = async (req, res) => {
+// Gets all questions of a specific contest and creates/ fetches participation
+exports.getAllQuestionsRelatedToContest = async (req, res) => {
   if (!req.params.contestId) {
     return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
   }
   try {
     const contest = await contestUtil.getOneContest(req.params.contestId);
-    var questionsList = contest.questionsList || [];
-    if (contest.isManual) {
-      try {
-        const questions = await questionUtil.getMultipleQuestions(questionsList, testcasesFilter);
-        return responseUtil.sendResponse(res, true, questions, "Questions fetched for Manual Contest with ContestId " + req.params.contestId, 200);
-      } catch (error) {
-        return responseUtil.sendResponse(res, false, null, "Questions could not fetched for Manual Contest with ContestId " + req.params.contestId + " due to error ", 500);
-      }
-    } else if (contest.isMultipleSet) {
-      try {
-        const participation = await Participation.findOne({ participationId: req.body.username.toLowerCase() + req.params.contestId });
-        if (participation.questions !== null && participation.questions.length !== 0) {
-          try {
-            const questions = await questionUtil.getMultipleQuestions(participation.questions, testcasesFilter);
-            return responseUtil.sendResponse(res, true, questions, "Questions fetched for MultipleSet Contest with ContestId " + req.params.contestId, 200);
-
-          } catch (err) {
-            return res.status(500).send({
-              success: false,
-              message: "Questions could not fetched for Manual Contest with ContestId " + req.params.contestId + " due to error ",
-            })
+    if(!contest) {
+      return responseUtil.sendResponse(res, false, null, "Contestcould not fetched due with contestId "+req.params.contestId, 400);
+    }
+    try {
+      const participationId = req.body.username.toLowerCase() + req.params.contestId;
+      var participationData = {
+        username: req.body.username.toLowerCase(),
+        branch: req.body.branch,
+        contestId: req.params.contestId,
+        questionsList : []
+      };
+      const participation = await participationUtil.getOneParticipation(participationId);
+      var questionsList = [];
+      if(participation !== null) {
+        questionsList = participation.questionsList;
+      } else {
+        if (contest.isManual) {
+          if(contest.questionsList.length === 0) {
+            return responseUtil.sendResponse(res, false, null, "Contest with contestId "+req.params.contestId+" does not consist of any questions (Manual Type)", 400);
           }
-        } else {
+          participationData.questionsList = contest.questionsList;
+        } else if(contest.isMultipleSet) {
+          if(contest.sets.length === 0) {
+            return responseUtil.sendResponse(res, false, null, "Contest with contestId "+req.params.contestId+" does not consist of any questions (MultipleSet Type)", 400);
+          }
           const sets = contest.sets;
-          if (sets == null) {
-            return res.status(500).send({
-              success: false,
-              message: "Sets are empty for MultipleSet Contest with ContestId " + req.params.contestId,
-            })
-          }
           for (var index in sets) {
             const randomIndex = Math.floor(Math.random() * (sets[index].length));
-            questionsList.push(sets[index][randomIndex]);
-          }
-          try {
-            participation.questions = questionsList;
-            await participation.save();
-            try {
-              const questions = await Question.find({ questionId: { $in: questionsList } });
-              return res.status(200).send({
-                success: true,
-                data: questions,
-                message: "Questions fetched for Manual Contest with ContestId " + req.params.contestId,
-              })
-            } catch (err) {
-              return res.status(500).send({
-                success: false,
-                message: "Questions could not fetched for Manual Contest with ContestId " + req.params.contestId + " due to error ",
-              })
-            }
-          } catch (err) {
-            return res.status(500).send({
-              success: false,
-              message: "Error while updating Participation with ContestId " + req.params.contestId + " due to error " + err.message,
-            })
+            participationData.questionsList.push(sets[index][randomIndex]);
           }
         }
-      } catch (err) {
-        return res.status(500).send({
-          success: false,
-          message: "Could not fetch participation with id " + req.body.username + req.params.contestId,
-        })
       }
+      try {
+        const newParticipation = await participationUtil.createParticipation(participationId, participationData);
+        try {
+          const questions = await questionUtil.getMultipleQuestions(participationData.questionsList, testcasesFilter);
+          return responseUtil.sendResponse(res, true, {newParticipation, questions}, "Questions and Participation fecthed successfully ", 200);
+        } catch(error) {
+          return responseUtil.sendResponse(res, false, null , error.message, 500);
+        }
+      } catch(error) {
+        return responseUtil.sendResponse(res, false, null , error.message, 500);
+      }
+    } catch(error) {
+      return responseUtil.sendResponse(res, false, null , error.message, 500);
     }
-  } catch (err) {
-    return res.status(500).send({
-      success: false,
-      message: "Could not fetch Contest with id " + req.params.contestId + " due to error " + err.message,
-    })
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null , error.message, 500);
   }
 }
 
