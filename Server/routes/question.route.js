@@ -20,7 +20,7 @@ module.exports = (app) => {
     app.get("/questions/:questionId", middleware.checkToken, questions.findOneQuestion);
 
     // Retrieve all questions with contestId and create/update Participation
-    app.get(
+    app.post(
         "/questions/contest/:contestId",
         middleware.checkToken,
         questions.getAllQuestionsRelatedToContest

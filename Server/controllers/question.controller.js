@@ -200,6 +200,26 @@ exports.deleteMultiple = (req, res) => {
   }
 };
 
+const getQuestions = async(contest) => {
+  var questionsList = [];
+  if (contest.isManual) {
+    if(contest.questionsList.length === 0) {
+      return Promise.reject(new Error("Contest does not have any questions (Manual Contest)"));
+    }
+    questionsList = contest.questionsList;
+  } else if(contest.isMultipleSet) {
+    if(contest.sets.length === 0) {
+      return Promise.reject(new Error("Contest does not have any sets (Multiple Set Contest)"));
+    }
+    const sets = contest.sets;
+    for (var index in sets) {
+      const randomIndex = Math.floor(Math.random() * (sets[index].length));
+      questionsList.push(sets[index][randomIndex]);
+    }
+  }
+  return questionsList;
+}
+
 // Gets all questions of a specific contest and creates/ fetches participation
 exports.getAllQuestionsRelatedToContest = async (req, res) => {
   if (!req.params.contestId) {
@@ -210,49 +230,24 @@ exports.getAllQuestionsRelatedToContest = async (req, res) => {
     if(!contest) {
       return responseUtil.sendResponse(res, false, null, "Contestcould not fetched due with contestId "+req.params.contestId, 400);
     }
-    try {
-      const participationId = req.body.username.toLowerCase() + req.params.contestId;
-      var participationData = {
-        username: req.body.username.toLowerCase(),
-        branch: req.body.branch,
-        contestId: req.params.contestId,
-        questionsList : []
-      };
-      const participation = await participationUtil.getOneParticipation(participationId);
-      var questionsList = [];
-      if(participation !== null) {
-        questionsList = participation.questionsList;
-      } else {
-        if (contest.isManual) {
-          if(contest.questionsList.length === 0) {
-            return responseUtil.sendResponse(res, false, null, "Contest with contestId "+req.params.contestId+" does not consist of any questions (Manual Type)", 400);
-          }
-          participationData.questionsList = contest.questionsList;
-        } else if(contest.isMultipleSet) {
-          if(contest.sets.length === 0) {
-            return responseUtil.sendResponse(res, false, null, "Contest with contestId "+req.params.contestId+" does not consist of any questions (MultipleSet Type)", 400);
-          }
-          const sets = contest.sets;
-          for (var index in sets) {
-            const randomIndex = Math.floor(Math.random() * (sets[index].length));
-            participationData.questionsList.push(sets[index][randomIndex]);
-          }
-        }
-      }
-      try {
-        const newParticipation = await participationUtil.createParticipation(participationId, participationData);
-        try {
-          const questions = await questionUtil.getMultipleQuestions(participationData.questionsList, testcasesFilter);
-          return responseUtil.sendResponse(res, true, {newParticipation, questions}, "Questions and Participation fecthed successfully ", 200);
-        } catch(error) {
-          return responseUtil.sendResponse(res, false, null , error.message, 500);
-        }
-      } catch(error) {
-        return responseUtil.sendResponse(res, false, null , error.message, 500);
-      }
-    } catch(error) {
-      return responseUtil.sendResponse(res, false, null , error.message, 500);
+    const participationId = req.body.username.toLowerCase() + req.params.contestId;
+    var participationData = {
+      username: req.body.username.toLowerCase(),
+      branch: req.body.branch,
+      contestId: req.params.contestId,
+      questionsList : []
+    };
+    const exisitingParticipation = await participationUtil.getOneParticipation(participationId);
+    var questionsList = [];
+    if(exisitingParticipation !== null) {
+      questionsList = exisitingParticipation.questionsList;
+    } else {
+      questionsList = await getQuestions(contest);
+      participationData.questionsList = questionsList;
     }
+    const participation = await participationUtil.createParticipation(participationId, participationData);
+    const questions = await questionUtil.getMultipleQuestions(participationData.questionsList, testcasesFilter);
+    return responseUtil.sendResponse(res, true, {participation, questions}, "Questions and Participation fetched successfully ", 200);
   } catch (error) {
     return responseUtil.sendResponse(res, false, null , error.message, 500);
   }
