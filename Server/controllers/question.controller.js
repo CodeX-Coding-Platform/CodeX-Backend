@@ -188,12 +188,11 @@ exports.deleteQuestion = async (req, res) => {
 
 // Delete questions with the specified questionIds in the request
 exports.deleteMultiple = (req, res) => {
-  if (!req.params.questionIds) {
+  if (!req.body.questionIds) {
     return responseUtil.sendResponse(res, false, null, "QuestionIds cannot be empty", 400);
   }
   try {
-    var questionIds = req.params.questionIds.split(",").filter((item) => !item.includes("-")).map((item) => item.trim());
-    const deletedQuestions = questionUtil.deleteMultipleQuestions(questionIds);
+    const deletedQuestions = questionUtil.deleteMultipleQuestions(req.body.questionIds);
     return responseUtil.sendResponse(res, true, deletedQuestions, "Questions deleted successfully", 200); 
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, error.message, 500);
@@ -243,61 +242,13 @@ exports.getAllQuestionsRelatedToContest = async (req, res) => {
       questionsList = exisitingParticipation.questionsList;
     } else {
       questionsList = await getQuestions(contest);
-      participationData.questionsList = questionsList;
     }
+    participationData.questionsList = questionsList;
+    //participation is only created if a record does not exist with given participationId
     const participation = await participationUtil.createParticipation(participationId, participationData);
-    const questions = await questionUtil.getMultipleQuestions(participationData.questionsList, testcasesFilter);
+    const questions = await questionUtil.getMultipleQuestions(participation.questionsList, testcasesFilter);
     return responseUtil.sendResponse(res, true, {participation, questions}, "Questions and Participation fetched successfully ", 200);
   } catch (error) {
     return responseUtil.sendResponse(res, false, null , error.message, 500);
   }
 }
-
-exports.findContestQuestions = async (req, res) => {
-  try {
-    const contest = await Contest.findOne({ contestId: req.params.contestId });
-    if (contest.multiSet === true) {
-      let sets = contest.sets;
-      const questionIds = new Set();
-      sets.forEach((sublist) => {
-        sublist.forEach((id) => {
-          questionIds.add(id);
-        });
-      });
-      const questionIdArray = Array.from(questionIds);
-      try {
-        const questions = await Question.find(
-          { questionId: { $in: questionIdArray } },
-          { questionId: 1, questionName: 1, _id: 0 }
-        );
-        return res.status(200).send(questions);
-      } catch (err) {
-        return res.status(500).send({
-          success: false,
-          message:
-            "Error retrieving questions from questionIdArray" +
-            questionIdArray.toString(),
-        });
-      }
-    } else {
-      try {
-        const questions = await Question.find({
-          contestId: req.params.contestId,
-        });
-        return res.status(200).send(questions);
-      } catch (err) {
-        return res.status(500).send({
-          success: false,
-          message:
-            "Error retrieving questions from questionIdArray" +
-            questionIdArray.toString(),
-        });
-      }
-    }
-  } catch (err) {
-    return res.status(500).send({
-      success: false,
-      message: "Error retrieving contest with id " + req.params.contestId,
-    });
-  }
-};
