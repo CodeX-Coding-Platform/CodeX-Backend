@@ -21,9 +21,6 @@ var testcasesFilter = { questionHiddenInput1: 0, questionHiddenInput2: 0, questi
 // Create and Save a new question
 exports.create = async (req, res) => {
   // Validate request
-  if (!req.body.questionId) {
-    return responseUtil.sendResponse(res, false, null, "QuestionId can not be empty", 400);
-  }
   if (!req.body.questionName) {
     return responseUtil.sendResponse(res, false, null, "Question name can not be empty", 400);
   }
@@ -54,8 +51,8 @@ exports.create = async (req, res) => {
       author: req.body.author,
       editorial: req.body.editorial,
       difficulty: req.body.difficulty,
-      company: req.body.company.split(","),
-      topic: req.body.topic.split(","),
+      company: req.body.company,
+      topic: req.body.topic,
     });
 
     // Save Question in the database
@@ -150,10 +147,10 @@ exports.getAllQuestions = async (req, res) => {
 // Find a single question with a questionId
 exports.findOneQuestion = async (req, res) => {
   try {
-    if(!req.query.questionId) {
+    if(!req.params.questionId) {
       return responseUtil.sendResponse(res, false, null, "questionId is not provided", 400); 
     }
-    const question = await questionUtil.getOneQuestion(req.params.questionId, testcasesFilter);
+    const question = await questionUtil.getOneQuestion(req.params.questionId, (req.isAdmin)?{}:testcasesFilter);
     return responseUtil.sendResponse(res, true, question, "Question retrieved successfully", 200); 
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
@@ -187,12 +184,12 @@ exports.deleteQuestion = async (req, res) => {
 };
 
 // Delete questions with the specified questionIds in the request
-exports.deleteMultiple = (req, res) => {
+exports.deleteMultiple = async(req, res) => {
   if (!req.body.questionIds) {
     return responseUtil.sendResponse(res, false, null, "QuestionIds cannot be empty", 400);
   }
   try {
-    const deletedQuestions = questionUtil.deleteMultipleQuestions(req.body.questionIds);
+    const deletedQuestions = await questionUtil.deleteMultipleQuestions(req.body.questionIds);
     return responseUtil.sendResponse(res, true, deletedQuestions, "Questions deleted successfully", 200); 
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, error.message, 500);

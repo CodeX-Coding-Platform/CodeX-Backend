@@ -1,6 +1,7 @@
 const Participation = require("../models/participation.model.js");
 
 const contestUtil = require("./contestUtil.js");
+const submissionUtil = require("./submissionUtil.js");
 
 const moment = require("moment-timezone");
 
@@ -56,8 +57,62 @@ const createParticipation = async (participationId, data) => {
     }
 }
 
+const updateParticipation = async(participationId, data) => {
+    if (data.participationId) {
+        return Promise.reject(new Error("questionId cannot be updated"));
+    }
+
+    try {
+        const updatedParticipation = await Participation.findOneAndUpdate(
+            { participationId: participationId },
+            { $set: data },
+            { new: true }
+        );
+        return updatedParticipation;
+    } catch (err) {
+        return Promise.reject(new Error(err.message));
+    }
+
+}
+
+const modifyScore = async(data) => {
+    try {
+        const participation = await getOneParticipation(data.participationId);
+        if(!participation) {
+            return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
+        }
+        //update participation with latest score if score is greater than previous
+        var submissionResults = participation.submissionResults;
+        const updatedParticipation = null;
+        if(Number(submissionResults[data.questionId]) <= Number(data.score) ) {
+            submissionResults[data.questionId] = data.score;
+            updatedParticipation = await updateParticipation(data.participationId, submissionResults);
+        }
+        const submission = await submissionUtil.createSubmission(data);
+        return (updatedParticipation !== null) ? updatedParticipation : participation;
+    } catch(error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
+const isValidParticipationTime = async(participationId) => {
+    try {
+        const participation = await getOneParticipation(participationId);
+        if(!participation) {
+            return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
+        }
+        const momentDate = moment();
+        const validTime = participation.validTill;
+        return (momentDate.isBefore(validTime));
+    } catch(error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
 
 module.exports = {
     getOneParticipation,
-    createParticipation
+    createParticipation,
+    modifyScore,
+    isValidParticipationTime
 }

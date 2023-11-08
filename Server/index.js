@@ -136,18 +136,7 @@ const getSubmissionToken = async (options) => {
 
 app.post("/validateSubmission", middleware.checkToken, async (req, res) => {
   try {
-    const options11 = {
-      method: "get",
-      json: true,
-      url: process.env.clientAddress + "/userSession/" + req.body.user,
-    };
-
-    const response11 = await axios(options11);
-    if (!response11.data.status) {
-      return res.status(404).send({ message: "user logged out!" });
-    }
-
-    if (req.body.contestId. h !== 0) {
+    if (req.body.contestId.length !== 0) {
       const duration = await contests.getDuration(req);
 
       const date = new Date();

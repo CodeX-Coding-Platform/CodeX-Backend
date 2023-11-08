@@ -80,16 +80,13 @@ const getQuestionTestCases = async (questionId) => {
         }
 
         const testcases = {
-            contestId: question.contestId,
+            questionId : question.questionId,
             HI1: question.questionHiddenInput1,
             HI2: question.questionHiddenInput2,
             HI3: question.questionHiddenInput3,
             HO1: question.questionHiddenOutput1,
             HO2: question.questionHiddenOutput2,
             HO3: question.questionHiddenOutput3,
-            difficulty: question.difficulty,
-            language: question.language,
-            courseId: question.courseId,
         };
 
         return testcases;

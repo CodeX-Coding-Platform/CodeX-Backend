@@ -17,6 +17,12 @@ module.exports = (app) => {
     submissions.findUser
   );
 
+  //judge a submission(run)
+  app.post("/runSubmission", middleware.checkToken, submissions.runSubmission)
+
+  //judge a submission
+  app.post("/validateSubmission", middleware.checkToken, submissions.validateSubmission);
+
   app.get("/submissions/gen/:questionId", submissions.genSource);
 
   app.get("/submission/profile/:username", submissions.findProfileData);

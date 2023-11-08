@@ -37,7 +37,7 @@ module.exports = (app) => {
     );
 
     //Delete multiple questions
-    app.delete(
+    app.post(
         "/questions/delete",
         middleware.checkTokenAdmin,
         questions.deleteMultiple

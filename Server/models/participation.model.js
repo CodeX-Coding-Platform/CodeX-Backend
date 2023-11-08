@@ -10,7 +10,7 @@ var participationSchema = new Schema({
     branch: String,
     contestId: String,
     participationTime: String,
-    submissionResults: Array,
+    submissionResults: Object,
     validTill: String,
     questionsList: Array,
     endContest: {

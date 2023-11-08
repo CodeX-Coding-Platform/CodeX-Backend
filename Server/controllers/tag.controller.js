@@ -1,80 +1,79 @@
 const Tag = require("../models/tag.model.js");
 
+const responseUtil = require("../services/responseUtil.js");
+
 exports.initiateTags = async (req, res) => {
-    const tag = await Tag.findOne();
-    if (!tag) {
-        const topicTags = [
-            "Sorting",
-            "Bit Manipulation",
-            "Searching",
-            "Greedy Algorithms",
-            "Dynamic Programming",
-            "Graph Theory",
-            "Data Structures",
-            "Algorithms",
-            "Arrays",
-            "Linked Lists",
-            "Stacks",
-            "Queues",
-            "Hash Tables",
-            "Trees",
-            "Graphs",
-            "Tries",
-            "Heaps",
-            "Disjoint Sets",
-            "Bubble Sort",
-            "Selection Sort",
-            "Insertion Sort",
-            "Merge Sort",
-            "Quicksort",
-            "Heap Sort",
-            "Binary Search",
-            "Floyd-Warshall Algorithm",
-            "Dijkstra's Algorithm",
-            "Bellman-Ford Algorithm",
-            "Kruskal's Algorithm",
-            "Prim's Algorithm",
-        ];
-
-        const companyTags = [
-            "Apple",
-            "Microsoft",
-            "Amazon",
-            "Google",
-            "Facebook",
-            "Tesla",
-            "Netflix",
-            "Oracle",
-            "IBM",
-            "Samsung",
-            "Adobe",
-            "Siemens",
-            "Huawei",
-            "Nvidia",
-            "VMware",
-            "SAP",
-            "Intel",
-            "PayPal",
-            "Airbnb",
-        ];
-
-        const tag = new Tag({
-            companyTags: companyTags,
-            topicTags: topicTags
-        });
-        tag.save()
-            .then((tags) => {
-                return res.status(201).send({
-                    success: true,
-                    message: "Tags Created Successfully",
-                    tagsData: tags
+    try {
+        const tags = await Tag.findOne();
+        if (!tag) {
+            const topicTags = [
+                "Sorting",
+                "Bit Manipulation",
+                "Searching",
+                "Greedy Algorithms",
+                "Dynamic Programming",
+                "Graph Theory",
+                "Data Structures",
+                "Algorithms",
+                "Arrays",
+                "Linked Lists",
+                "Stacks",
+                "Queues",
+                "Hash Tables",
+                "Trees",
+                "Graphs",
+                "Tries",
+                "Heaps",
+                "Disjoint Sets",
+                "Bubble Sort",
+                "Selection Sort",
+                "Insertion Sort",
+                "Merge Sort",
+                "Quicksort",
+                "Heap Sort",
+                "Binary Search",
+                "Floyd-Warshall Algorithm",
+                "Dijkstra's Algorithm",
+                "Bellman-Ford Algorithm",
+                "Kruskal's Algorithm",
+                "Prim's Algorithm",
+            ];
+    
+            const companyTags = [
+                "Apple",
+                "Microsoft",
+                "Amazon",
+                "Google",
+                "Facebook",
+                "Tesla",
+                "Netflix",
+                "Oracle",
+                "IBM",
+                "Samsung",
+                "Adobe",
+                "Siemens",
+                "Huawei",
+                "Nvidia",
+                "VMware",
+                "SAP",
+                "Intel",
+                "PayPal",
+                "Airbnb",
+            ];
+    
+            const tag = new Tag({
+                companyTags: companyTags,
+                topicTags: topicTags
+            });
+            tag.save()
+                .then((newTags) => {
+                    return responseUtil.sendResponse(res,true,newTags,"Tags Created Successfully",201);
                 })
-            })
-    } else {
-        return res.status(500).send({
-            success: true,
-            message: "Tags are are already initiated",
-        })
+        } else {
+            return responseUtil.sendResponse(res,true,tags,"Tags are already created!",200);
+        }
+    } catch(error) {
+        return responseUtil.sendResponse(res,false,null,"Error while fetching tags",400);
     }
 };
 

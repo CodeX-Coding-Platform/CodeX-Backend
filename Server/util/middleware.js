@@ -23,6 +23,9 @@ let checkToken = (req, res, next) => {
       } else {
         if (decoded.isVerified || decoded.admin) {
           req.decoded = decoded;
+          if(decoded.admin) {
+            req.isAdmin = true;
+          }
           next();
         } else {
           return res.json({
@@ -62,6 +65,7 @@ let checkTokenAdmin = (req, res, next) => {
         });
       } else {
         if (decoded.admin) {
+          req.isAdmin = true;
           req.decoded = decoded;
           next();
         } else {

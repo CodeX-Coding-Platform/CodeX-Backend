@@ -1,5 +1,10 @@
 const Submission = require("../models/submission.model.js");
 var moment = require("moment");
+
+const contestUtil = require("../services/contestUtil.js");
+const questionUtil = require("../services/questionUtil.js");
+const judgeUtil = require("../services/judgeUtil.js");
+
 const fs = require("fs");
 const path = require("path");
 // Create and Save a new submission
@@ -75,6 +80,74 @@ exports.findUser = (req, res) => {
       });
     });
 };
+
+exports.runSubmission = async (req, res) => {
+  //validations
+  if(!req.body.contestId) {
+    return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
+  }
+  if(!req.body.questionId) {
+    return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
+  }
+  if(!req.body.username) {
+    return responseUtil.sendResponse(res, false, null, "Username cannot be empty", 400);
+  }
+  if(!req.body.source_code) {
+    return responseUtil.sendResponse(res, false, null, "source_code cannot be empty", 400);
+  }
+  if(!req.body.language_id) {
+    return responseUtil.sendResponse(res, false, null, "language_id cannot be empty", 400);
+  }
+  try {
+    //check if contest is active
+    const contest = await contestUtil.getOneContest(req.body.contestId);
+    const isContestActive = await contestUtil.isContestActive(contest);
+    if(!isContestActive && !req.body.isAdmin) {
+      return responseUtil.sendResponse(res, false, null, "Contest is not active", 400);
+    }
+    const judgeResponse = await judgeUtil.sendRequestsToJudge(testcases, req.body, req.body.isAdmin);
+  } catch(error) {
+    return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
+  }
+}
+
+exports.validateSubmission = async (req, res) => {
+  //validations
+  if(!req.body.contestId) {
+    return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
+  }
+  if(!req.body.questionId) {
+    return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
+  }
+  if(!req.body.username) {
+    return responseUtil.sendResponse(res, false, null, "Username cannot be empty", 400);
+  }
+  if(!req.body.source_code) {
+    return responseUtil.sendResponse(res, false, null, "source_code cannot be empty", 400);
+  }
+  if(!req.body.language_id) {
+    return responseUtil.sendResponse(res, false, null, "language_id cannot be empty", 400);
+  }
+
+  try {
+    //check if contest is active
+    const contest = await contestUtil.getOneContest(req.body.contestId);
+    const isContestActive = await contestUtil.isContestActive(contest);
+    if(!isContestActive && !req.body.isAdmin) {
+      return responseUtil.sendResponse(res, false, null, "Contest is not active", 400);
+    }
+    // get the question testcases
+    const testcases = await questionUtil.getQuestionTestCases(req.body.questionId);
+    const judgeResponse = await judgeUtil.sendRequestsToJudge(testcases, req.body, req.body.isAdmin);
+    // Create the submission
+    const submission = await submissionUtil.createSubmission(data);
+    return submission;
+  } catch(error) {
+    return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
+  }
+}
+
+
 exports.genSource = (req, res) => {
   Submission.find({ questionId: req.params.questionId })
     .then((submission) => {
