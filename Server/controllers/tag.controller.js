@@ -5,7 +5,7 @@ const responseUtil = require("../services/responseUtil.js");
 exports.initiateTags = async (req, res) => {
     try {
         const tags = await Tag.findOne();
-        if (!tag) {
+        if (!tags) {
             const topicTags = [
                 "Sorting",
                 "Bit Manipulation",

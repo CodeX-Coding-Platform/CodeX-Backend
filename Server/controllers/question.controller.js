@@ -15,8 +15,6 @@ dotenv.config({ path: "../util/config.env" });
 
 var questionCode = process.env.questionCode
 
-var testcasesFilter = { questionHiddenInput1: 0, questionHiddenInput2: 0, questionHiddenInput3: 0, questionHiddenOutput1: 0, questionHiddenOutput2: 0, questionHiddenOutput3: 0 }
-
 // const Base64 = require('js-base64').Base64;
 // Create and Save a new question
 exports.create = async (req, res) => {
@@ -137,7 +135,7 @@ exports.createExcel = (req, res) => {
 // Retrieve and return all questions from the database.
 exports.getAllQuestions = async (req, res) => {
   try {
-    const questions = await questionUtil.getAllQuestions(testcasesFilter);
+    const questions = await questionUtil.getAllQuestions(questionUtil.decodeFilters(req.filters));
     return responseUtil.sendResponse(res, true, questions, "Questions retrieved successfully", 200);
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
@@ -150,7 +148,7 @@ exports.findOneQuestion = async (req, res) => {
     if(!req.params.questionId) {
       return responseUtil.sendResponse(res, false, null, "questionId is not provided", 400); 
     }
-    const question = await questionUtil.getOneQuestion(req.params.questionId, (req.isAdmin)?{}:testcasesFilter);
+    const question = await questionUtil.getOneQuestion(req.params.questionId, (req.isAdmin)?{}:questionUtil.decodeFilters(req.filters));
     return responseUtil.sendResponse(res, true, question, "Question retrieved successfully", 200); 
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
@@ -243,7 +241,7 @@ exports.getAllQuestionsRelatedToContest = async (req, res) => {
     participationData.questionsList = questionsList;
     //participation is only created if a record does not exist with given participationId
     const participation = await participationUtil.createParticipation(participationId, participationData);
-    const questions = await questionUtil.getMultipleQuestions(participation.questionsList, testcasesFilter);
+    const questions = await questionUtil.getMultipleQuestions(participation.questionsList, questionUtil.decodeFilters(req.filters));
     return responseUtil.sendResponse(res, true, {participation, questions}, "Questions and Participation fetched successfully ", 200);
   } catch (error) {
     return responseUtil.sendResponse(res, false, null , error.message, 500);

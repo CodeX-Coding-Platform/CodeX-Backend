@@ -98,6 +98,14 @@ const getQuestionTestCases = async (questionId) => {
     }
 };
 
+const decodeFilters = (filters) => {
+    var questionFilters = {};
+    for(var filter in filters) {
+        questionFilters[filter] = 1;
+    }
+    return questionFilters;
+}
+
 module.exports = {
     isValidQuestionIds,
     deleteQuestion,
@@ -106,5 +114,6 @@ module.exports = {
     getOneQuestion,
     getMultipleQuestions,
     getQuestionTestCases,
-    deleteMultipleQuestions
+    deleteMultipleQuestions,
+    decodeFilters
 }

@@ -81,7 +81,7 @@ exports.activeContest = async (req, res) => {
     if (isContestActive || req.decoded.admin) {
       return responseUtil.sendResponse(res, true, isContestActive, "Contest window is open!", 200);
     } else {
-      return responseUtil.sendResponse(res, false, null, "Contest window isn't open!", 400);
+      return responseUtil.sendResponse(res, false, null, "Contest window isn't open!", 200);
     }
 
   } catch (error) {

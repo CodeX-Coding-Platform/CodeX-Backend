@@ -56,9 +56,9 @@ const isContestActive = async (contest) => {
 
     if (
         contest &&
-        contest.date === today &&
-        contest.startTime < currentTime &&
-        contest.endTime > currentTime
+        contest.contestDate === today &&
+        contest.contestStartTime < currentTime &&
+        contest.contestEndTime > currentTime
     ) {
         return true;
     }
