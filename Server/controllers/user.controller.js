@@ -17,79 +17,36 @@ const { response } = require("express");
 let clientAddress = process.env.clientAddress;
 let emailDomains = domains.domains;
 
+const responseUtil = require("../services/responseUtil");
+
 // Retrieve and return all users from the database.
-exports.findAll = (req, res) => {
-  User.find()
-    .then((users) => {
-      res.send(users);
-    })
-    .catch((err) => {
-      res.status(500).send({
-        success: false,
-        message: err.message || "Some error occurred while retrieving users.",
-      });
-    });
+exports.findAll = async (req, res) => {
+  try {
+    const users = await User.find({});
+    return responseUtil.sendResponse(res,true,users,"Users fetched successfully",200);
+  } catch(error) {
+    return responseUtil.sendResponse(res,false,null,"error occurred while retrieving users" + error.message,400);
+  }
 };
 
 // Find a single user with a username
-exports.findOne = (req, res) => {
-  User.find({ username: req.params.username })
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username " + req.params.username,
-        });
-      }
-      res.send(user);
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.params.username,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error retrieving user with id " + req.params.username,
-      });
-    });
+exports.findOne = async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    return responseUtil.sendResponse(res,true,user,"User fetched successfully",200);
+  } catch(error) {
+    return responseUtil.sendResponse(res,false,null,"error occurred while retrieving user" + error.message,400);
+  }
 };
 
 // Find a single user with a username
-exports.findOnePublic = (req, res) => {
-  User.find({ username: req.params.username })
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username " + req.params.username,
-        });
-      }
-      user = user[0];
-      let sendUser = {
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        branch: user.branch,
-        phone: user.phone ? user.phone : "",
-        photo: user.photo.contentType ? user.photo.data.toString("base64") : "",
-      };
-      res.send(sendUser);
-    })
-    .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username " + req.params.username,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error retrieving user with id " + req.params.username,
-      });
-    });
+exports.findOnePublic = async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    return responseUtil.sendResponse(res,true,user,"User fetched successfully",200);
+  } catch(error) {
+    return responseUtil.sendResponse(res,false,null,"error occurred while retrieving user" + error.message,400);
+  }
 };
 
 // Find the branch with a username
@@ -135,11 +92,11 @@ exports.create = (req, res) => {
     req.body.password2 = req.body.confirmPassword;
   }
   if (
-    !req.body.email ||
-    !req.body.username ||
-    !req.body.password ||
-    !req.body.name ||
-    !req.body.branch
+    req.body.email === null ||
+    req.body.username === null ||
+    req.body.password === null ||
+    req.body.name === null ||
+    req.body.branch === null
   ) {
     return res.status(400).send({
       success: false,
@@ -188,8 +145,8 @@ exports.create = (req, res) => {
       .save()
       .then((data) => {
         data.success = true;
-        res.send(data);
         mail(user).catch(console.error);
+        return responseUtil.sendResponse(res,true,user,"User created successfully",200);
       })
       .catch((err) => {
         err.success = false;
@@ -201,7 +158,7 @@ exports.create = (req, res) => {
         if (err.message1.includes("email")) {
           err.message = err.message + "Email is already taken. \n";
         }
-        res.status(500).send(err);
+        return responseUtil.sendResponse(res,false,nul,"User creation failed due to"+err.message,500);
       });
 
     // Gen token & send email here
@@ -285,7 +242,7 @@ exports.create = (req, res) => {
 
 // Update a user identified by the username in the request
 exports.update = (req, res) => {
-  if (!req.body.username || !req.body.password) {
+  if (req.body.username === null || req.body.password === null) {
     return res.status(400).send({
       success: false,
       message: "User content can not be empty",
@@ -310,39 +267,24 @@ exports.update = (req, res) => {
   )
     .then((user) => {
       if (!user) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.params.username,
-        });
+        return responseUtil.sendResponse(res,false,null,"User not found with username  " + req.params.username,404);
       }
-      res.send(user);
+      return responseUtil.sendResponse(res,true,user,"User found with username  " + req.params.username,200);
     })
     .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.params.username,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error updating user with id " + req.params.username,
-      });
+      return responseUtil.sendResponse(res,false,null,"User not found with username  " + req.params.username+" due to"+err.message,404);
     });
 };
 
 exports.updateOne = async (req, res) => {
   // 1
   if (
-    !req.body.email ||
-    !req.body.newPassword ||
-    !req.body.password ||
-    !req.body.name
+    req.body.email === null ||
+    req.body.newPassword === null ||
+    req.body.password === null ||
+    req.body.name === null
   ) {
-    return res.status(400).send({
-      success: false,
-      message: "details can not be empty!",
-    });
+    return responseUtil.sendResponse(res,false,null,"details can not be empty!",404);
   }
 
   // 2
@@ -352,42 +294,23 @@ exports.updateOne = async (req, res) => {
       req.body.email.slice(atSign, req.body.email.length)
     ) === -1
   ) {
-    return res.status(400).send({
-      success: false,
-      message:
-        "We do not support this email provider, please try another email ID.",
-    });
+    return responseUtil.sendResponse(res,false,null,"We do not support this email provider, please try another email ID.",404);
   }
 
   // 3
   User.find({ username: req.params.username })
     .then(async (user) => {
       if (!user) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username " + req.params.username,
-        });
+        return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
       }
       if (user[0].password !== req.body.password) {
-        return res.status(404).send({
-          success: false,
-          message: "Incorrect password entered.",
-        });
+        return responseUtil.sendResponse(res,false,null,"Incorrect password entered.",404);
       }
       const result = await updateProfile();
       return result;
     })
     .catch((err) => {
-      if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.params.username,
-        });
-      }
-      return res.status(500).send({
-        success: false,
-        message: "Error retrieving user with id " + req.params.username,
-      });
+      return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
     });
 
   // 4
@@ -412,22 +335,13 @@ exports.updateOne = async (req, res) => {
     )
       .then((user) => {
         if (!user) {
-          return res.status(404).send({
-            success: false,
-            message: "User not found with username  " + req.params.username,
-          });
+          return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
         }
-        res.send({
-          success: true,
-          message: "Profile updated successfully.",
-        });
+        return responseUtil.sendResponse(res,true,user,"Profile updated successfully with username" + req.params.username,404);
       })
       .catch((err) => {
         if (err.kind === "ObjectId") {
-          return res.status(404).send({
-            success: false,
-            message: "User not found with username  " + req.params.username,
-          });
+          return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
         }
         err.message1 = err.message;
         err.message = "";
@@ -437,10 +351,7 @@ exports.updateOne = async (req, res) => {
         if (err.message1.includes("email")) {
           err.message = err.message + "Email is already taken. \n";
         }
-        return res.status(500).send({
-          success: false,
-          message: err.message, //"Error updating user with id " + req.params.username,
-        });
+        return responseUtil.sendResponse(res,false,null,"Error updating user with username " + req.params.username+" due to "+err.message,404);
       });
   };
 };
@@ -449,21 +360,14 @@ exports.forgotPass = (req, res) => {
   User.findOne({ username: req.body.username })
     .then((user) => {
       if (user.length === 0) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.body.username,
-        });
+        return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
       }
-      console.log("USER", user);
-      res.send({ success: true, message: "Check your Mail for Password" });
       mailUser(user).catch((err) => console.log(err));
+      return responseUtil.sendResponse(res,true,user,"Please check you mail!",200);
     })
     .catch((err) => {
       if (err.kind === "ObjectId") {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.params.username,
-        });
+        return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
       }
     });
   // Gen token & send email here
@@ -544,10 +448,7 @@ exports.checkPass = (req, res) => {
   User.find({ username: req.body.username })
     .then(async (user) => {
       if (user.length === 0) {
-        return res.status(404).send({
-          success: false,
-          message: "User not found with username  " + req.body.username,
-        });
+        return responseUtil.sendResponse(res,false,null,"User not found with username " + req.params.username,404);
       }
       if (user[0].password === req.body.password) {
         if (user[0].isVerified === true) {

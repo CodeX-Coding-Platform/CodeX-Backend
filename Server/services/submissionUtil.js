@@ -10,7 +10,7 @@ const createSubmission = async (data) => {
         languageId: data.languageId,
         sourceCode: data.sourceCode,
         score: data.score,
-        submissionToken: data.submissionToken,
+        submissionTokens: data.submissionTokens,
         submissionTime: moment(),
         participationId: data.participationId
     });

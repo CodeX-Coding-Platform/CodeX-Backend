@@ -29,6 +29,19 @@ var questionSchema = new Schema({
     },
     company: Array,
     topic: Array,
+    //mcq attributes
+    isMcq : {
+        type: Boolean,
+        default: false,
+    },
+    mcqOptions : Array,
+    correctOption: String,
+    mcqImage : {
+        data : Buffer,
+        contentType : String
+    },
+    mcqTopic : String,
+    mcqSubject : String
 });
 
 module.exports = mongoose.model("Question", questionSchema);

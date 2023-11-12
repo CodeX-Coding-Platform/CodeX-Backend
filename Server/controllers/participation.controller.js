@@ -1,24 +1,26 @@
 const Participation = require("../models/participation.model.js");
 const contests = require("./contest.controller.js");
+
+const participationUtil = require("../services/participationUtil");
 var moment = require("moment");
 
 exports.create = async (req, res) => {
   req.body.username = req.decoded.username;
   // Validate request
-  if (!req.body.username) {
+  if (req.body.username === null) {
     return res.status(400).send({
       success: false,
       message: "user Id can not be empty",
     });
   }
 
-  if (!req.body.branch && req.body.username !== "admin") {
+  if (req.body.branch === null && req.body.username !== "admin") {
     return res.status(400).send({
       success: false,
       message: "user Branch can not be empty",
     });
   }
-  if (!req.body.contestId) {
+  if (req.body.contestId  === null) {
     return res.status(400).send({
       success: false,
       message: "contest Id can not be empty",
@@ -74,35 +76,23 @@ exports.create = async (req, res) => {
 };
 
 // Retrieve and return all participations from the database.
-exports.findAll = (req, res) => {
-  Participation.find()
-    .then((participation) => {
-      res.send(participation);
-    })
-    .catch((err) => {
-      res.status(500).send({
-        success: false,
-        message:
-          err.message || "Some error occurred while retrieving participation.",
-      });
-    });
+exports.findAll = async (req, res) => {
+  try {
+    const participations = await participationUtil.getAllParticipations();
+    return responseUtil.sendResponse(res, true, participations, "Participations fetched successfully", 200); 
+  } catch(error) {
+    return responseUtil.sendResponse(res, false, null, "Participations fetched failed due to "+error.message, 500);
+  }
 };
 
 // Retrieve and return all participation details for user in contest.
-exports.findUser = (req, res) => {
-  Participation.find({
-    participationId: req.params.username + req.params.contestId,
-  })
-    .then((participation) => {
-      res.send(participation);
-    })
-    .catch((err) => {
-      res.status(500).send({
-        success: false,
-        message:
-          err.message || "Some error occurred while retrieving participation.",
-      });
-    });
+exports.findUser = async (req, res) => {
+  try {
+    const participation = await participationUtil.getOneParticipation(req.params.username + req.params.contestId);
+    return responseUtil.sendResponse(res, true, participation, "Participation fetched successfully", 200);
+  } catch(error) {
+    return responseUtil.sendResponse(res, false, null, "Participation fetched failed due to "+error.message, 500);
+  }
 };
 
 exports.findAllContestsUser = (req, res) => {

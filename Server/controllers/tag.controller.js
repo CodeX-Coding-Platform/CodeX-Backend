@@ -80,10 +80,7 @@ exports.initiateTags = async (req, res) => {
 exports.updateTags = async(req, res) => {
     const tag = await Tag.findOne();
     if (!tag) {
-        return res.status(500).send({
-            success: false,
-            message: "Tags are not initiated",
-        })
+        return responseUtil.sendResponse(res,false,null,"Tags are not initiated",500);
     }
     const topicTags = req.body.topicTags;
     const companyTags = req.body.companyTags;
@@ -110,11 +107,6 @@ exports.updateTags = async(req, res) => {
     tag.companyTags = newCompanyTags;
 
     const updatedTags = await tag.save();
-
-    return res.status(200).send({
-        success: true,
-        message: "Tags updated successfully",
-        tagsData: updatedTags,
-    });
+    return responseUtil.sendResponse(res,true,updatedTags,"Tags updated successfully",200);
 
 };

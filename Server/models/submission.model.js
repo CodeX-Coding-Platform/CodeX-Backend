@@ -10,7 +10,7 @@ var submissionSchema = new Schema({
   sourceCode: String,
   score: Number,
   result: Array,
-  submissionToken: Array,
+  submissionTokens : Array,
   submissionTime: String,
   color: String,
   ipAddress: String,

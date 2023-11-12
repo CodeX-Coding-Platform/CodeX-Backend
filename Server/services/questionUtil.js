@@ -101,7 +101,7 @@ const getQuestionTestCases = async (questionId) => {
 const decodeFilters = (filters) => {
     var questionFilters = {};
     for(var filter in filters) {
-        questionFilters[filter] = 1;
+        questionFilters[filters[filter]] = 1;
     }
     return questionFilters;
 }

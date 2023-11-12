@@ -72,7 +72,7 @@ exports.getAllContests = async (req, res) => {
 //check whether contest is active
 exports.activeContest = async (req, res) => {
   try {
-    if (!req.params.contestId) {
+    if (req.params.contestId === null) {
       return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
     }
     const contest = await contestUtil.getOneContest(req.params.contestId);
@@ -92,7 +92,7 @@ exports.activeContest = async (req, res) => {
 // Find a single contest with a contestId
 exports.findOneContest = async (req, res) => {
   try {
-    if (!req.params.contestId) {
+    if (req.params.contestId === null) {
       return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
     }
     const contest = await contestUtil.getOneContest(req.params.contestId);
@@ -111,7 +111,7 @@ exports.findOneContest = async (req, res) => {
 
 exports.updateContest = async (req, res) => {
   try {
-    if (!req.params.contestId) {
+    if (req.params.contestId === null) {
       return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
     }
     const updatedContest = await contestUtil.updateContest(req.params.contestId, req.body);
@@ -130,7 +130,7 @@ exports.updateContest = async (req, res) => {
 
 exports.deleteContest = async (req, res) => {
   try {
-    if (!req.params.contestId) {
+    if (req.params.contestId === null) {
       return responseUtil.sendResponse(res, false, null, "contestId is not provided", 400);
     }
     const deletedContest = await contestUtil.deleteContest(req.params.contestId);

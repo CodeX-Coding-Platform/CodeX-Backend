@@ -14,6 +14,15 @@ const getOneParticipation = async (participationId) => {
     }
 }
 
+const getAllParticipations = async () => {
+    try {
+        const participations = await Participation.find({});
+        return participations;
+    } catch (error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
 const createParticipation = async (participationId, data) => {
     if (!data.username) {
         return Promise.reject(new Error("username not provided"));
@@ -78,7 +87,7 @@ const updateParticipation = async(participationId, data) => {
 const modifyScore = async(data) => {
     try {
         const participation = await getOneParticipation(data.participationId);
-        if(!participation) {
+        if(participation === null) {
             return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
         }
         //update participation with latest score if score is greater than previous
@@ -112,6 +121,7 @@ const isValidParticipationTime = async(participationId) => {
 
 module.exports = {
     getOneParticipation,
+    getAllParticipations,
     createParticipation,
     modifyScore,
     isValidParticipationTime
