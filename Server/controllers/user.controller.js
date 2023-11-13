@@ -158,7 +158,7 @@ exports.create = (req, res) => {
         if (err.message1.includes("email")) {
           err.message = err.message + "Email is already taken. \n";
         }
-        return responseUtil.sendResponse(res,false,nul,"User creation failed due to"+err.message,500);
+        return responseUtil.sendResponse(res,false,null,"User creation failed due to"+err.message,500);
       });
 
     // Gen token & send email here
