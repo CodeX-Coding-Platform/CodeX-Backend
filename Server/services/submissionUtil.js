@@ -5,6 +5,7 @@ var moment = require("moment");
 const createSubmission = async (data) => {
     // Create a Submission
     const submission = new Submission({
+        submissionId : data.submissionId,
         questionId: data.questionId,
         username: data.username,
         languageId: data.languageId,

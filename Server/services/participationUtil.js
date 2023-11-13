@@ -87,20 +87,21 @@ const updateParticipation = async(participationId, data) => {
 const modifyScore = async(data) => {
     try {
         const participation = await getOneParticipation(data.participationId);
-        if(participation === undefined) {
+        if(participation === null) {
             return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
         }
         //update participation with latest score if score is greater than previous
-        var submissionResults = participation.submissionResults;
-        const updatedParticipation = null;
+        var submissionResults = participation.submissionResults || [];
+        var updatedParticipation = null;
         if(Number(submissionResults[data.questionId]) <= Number(data.score) ) {
             submissionResults[data.questionId] = data.score;
             updatedParticipation = await updateParticipation(data.participationId, submissionResults);
         }
+        data.submissionId = data.contestId + data.username;
         const submission = await submissionUtil.createSubmission(data);
         return (updatedParticipation !== null) ? updatedParticipation : participation;
     } catch(error) {
-        return Promise.reject(new Error(err.message));
+        return Promise.reject(new Error(error.message));
     }
 }
 
