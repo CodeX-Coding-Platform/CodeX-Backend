@@ -8,7 +8,7 @@ const axios = require("axios");
 dotenv.config({ path: "../Server/util/config.env" });
 
 const apiAddress = process.env.localAPI;
-const postUrl = apiAddress + "/submissions/?base64_encoded=true";
+const postUrl = apiAddress + "/submissions";
 var retryCount = process.env.retryCount || 30;
 const waitTime = process.env.waitTime || 1000;
 
@@ -33,7 +33,7 @@ const runSubmission = async (data) => {
     const options = {
         method: "post",
         data: {
-            source_code: btoa(data.sourceCode),
+            source_code: (data.sourceCode),
             language_id: data.languageId,
             stdin: data.input,
         },
