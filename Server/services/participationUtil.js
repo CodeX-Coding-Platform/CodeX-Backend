@@ -23,6 +23,15 @@ const getAllParticipations = async () => {
     }
 }
 
+const getAllParticipationsContest = async (contestId) => {
+    try {
+        const participations = await Participation.find({ contestId: contestId });
+        return participations;
+    } catch (error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
 const createParticipation = async (participationId, data) => {
     if (!data.username) {
         return Promise.reject(new Error("username not provided"));
@@ -40,7 +49,7 @@ const createParticipation = async (participationId, data) => {
     // If it does not exist, create a new one.
     let contest = await contestUtil.getOneContest(data.contestId);
     if (!contest) {
-        return Promise.reject(new Error("contestId does not exist with the given id "+data.contestId));
+        return Promise.reject(new Error("contestId does not exist with the given id " + data.contestId));
     }
 
     let date = moment();
@@ -56,17 +65,17 @@ const createParticipation = async (participationId, data) => {
         participationTime: date,
         submissionResults: [],
         validTill: endTime,
-        questionsList : data.questionsList
+        questionsList: data.questionsList
     });
     try {
         const newParticipation = await participation.save();
         return newParticipation;
     } catch (error) {
-        return Promise.reject(new Error("Failed to Create Participation with participationId "+participationId));
+        return Promise.reject(new Error("Failed to Create Participation with participationId " + participationId));
     }
 }
 
-const updateParticipation = async(participationId, data) => {
+const updateParticipation = async (participationId, data) => {
     if (data.participationId) {
         return Promise.reject(new Error("questionId cannot be updated"));
     }
@@ -74,7 +83,9 @@ const updateParticipation = async(participationId, data) => {
     try {
         const updatedParticipation = await Participation.findOneAndUpdate(
             { participationId: participationId },
-            { $set: data },
+            {
+                $set: data
+            },
             { new: true }
         );
         return updatedParticipation;
@@ -84,37 +95,44 @@ const updateParticipation = async(participationId, data) => {
 
 }
 
-const modifyScore = async(data) => {
+const modifyScore = async (data) => {
     try {
         const participation = await getOneParticipation(data.participationId);
-        if(participation === null) {
-            return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
+        if (participation === null) {
+            return Promise.reject(new Error("Participation does not exist with participationId " + data.participationId));
         }
         //update participation with latest score if score is greater than previous
-        var submissionResults = participation.submissionResults || [];
+        var results = {};
         var updatedParticipation = null;
-        if(Number(submissionResults[data.questionId]) <= Number(data.score) ) {
-            submissionResults[data.questionId] = data.score;
+        const currentScore = (participation.submissionResults[data.questionId] !== undefined) ? participation.submissionResults[data.questionId] : Number.MAX_SAFE_INTEGER;
+        if (Number(currentScore) < Number(data.score)) {
+            results[data.questionId] = data.score;
+        } else if(currentScore === Number.MAX_SAFE_INTEGER)  {
+            results[data.questionId] = data.score;
+        }
+        if(Object.keys(results).length !== 0) {
+            var submissionResults = {};
+            submissionResults["submissionResults"] = results;
             updatedParticipation = await updateParticipation(data.participationId, submissionResults);
         }
         data.submissionId = data.contestId + data.username;
         const submission = await submissionUtil.createSubmission(data);
         return (updatedParticipation !== null) ? updatedParticipation : participation;
-    } catch(error) {
+    } catch (error) {
         return Promise.reject(new Error(error.message));
     }
 }
 
-const isValidParticipationTime = async(participationId) => {
+const isValidParticipationTime = async (participationId) => {
     try {
         const participation = await getOneParticipation(participationId);
-        if(!participation) {
-            return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
+        if (!participation) {
+            return Promise.reject(new Error("Participation does not exist with participationId " + data.participationId));
         }
         const momentDate = moment();
         const validTime = participation.validTill;
         return (momentDate.isBefore(validTime));
-    } catch(error) {
+    } catch (error) {
         return Promise.reject(new Error(err.message));
     }
 }
@@ -123,6 +141,7 @@ const isValidParticipationTime = async(participationId) => {
 module.exports = {
     getOneParticipation,
     getAllParticipations,
+    getAllParticipationsContest,
     createParticipation,
     modifyScore,
     isValidParticipationTime

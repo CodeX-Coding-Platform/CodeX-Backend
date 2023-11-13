@@ -2,6 +2,8 @@ const Participation = require("../models/participation.model.js");
 const contests = require("./contest.controller.js");
 
 const participationUtil = require("../services/participationUtil");
+const responseUtil = require("../services/responseUtil");
+const contestUtil = require("../services/contestUtil");
 var moment = require("moment");
 
 exports.create = async (req, res) => {
@@ -181,6 +183,44 @@ exports.updateParticipation = (req, questionIds, callback) => {
       return callback("Error retrieving contest", null);
     });
 };
+
+exports.getLeaderboard = async(req,res) => {
+  if(req.params.contestId  === undefined) {
+    return responseUtil.sendResponse(res,false,null,"ContestId cannot be empty",400);
+  }
+  try {
+
+    const contest = await contestUtil.getOneContest(req.params.contestId);
+    var questionIds = [];
+    if(contest.isMultipleSet) {
+      const questionIdSet = new Set();
+      const sets = contest.sets;
+      for(const set of sets) {
+        for(const questionId of set){
+          questionIdSet.add(questionId);
+        }
+      }
+      questionIds = Array.from(questionIdSet);
+    } else {
+      questionIds = contest.questionsList;
+    }
+    const participations = await participationUtil.getAllParticipationsContest(req.params.contestId);
+    var contestResults = [];
+    for(var participation in participations) {
+      var userResult = {};
+      userResult["username"] = participations[participation].username;
+      var totalScore=0;
+      for(var question in questionIds) {
+        userResult[questionIds[question]] = (participations[participation].submissionResults[questionIds[question]] !== undefined) ? participations[participation].submissionResults[questionIds[question]] : "Not Attempted";
+        totalScore += (userResult[questionIds[question]] !== "Not Attempted") ? userResult[questionIds[question]] : 0;
+      }
+      contestResults.push(userResult);
+    }
+    return responseUtil.sendResponse(res,true,contestResults,"Leaderboard Fetched Successfully",200);
+  } catch(error) {
+    return responseUtil.sendResponse(res,false,null,error.message,400);
+  }
+}
 
 exports.acceptSubmission = async (sub) => {
   try {

@@ -16,6 +16,8 @@ module.exports = (app) => {
     participation.findUser
   );
 
+  app.get("/leaderboard/:contestId",middleware.checkToken, participation.getLeaderboard);
+
   // Participations length of the user
   app.get("/findAllContestsUser", participation.findAllContestsUser);
 
