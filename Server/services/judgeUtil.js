@@ -144,7 +144,21 @@ const sendRequestsToJudge = async (testcases, data) => {
     }
 
     // Calculate the score
-    const score = Number(results.filter((result) => result.data.status.description === "Accepted").length) * 100;
+    var score = 0;
+    const correctSubmission = Number(results.filter((result) => result.data.status.description === "Accepted").length);
+    switch (correctSubmission) {
+        case 1:
+            score = 25;
+            break;
+        case 2:
+            score = 50;
+            break;
+        case 3:
+            score = 100;
+            break;
+        default:
+            score = 0;
+    }
     data.score = score;
     data.submissionTokens = tokens
     data.participationId = data.username + data.contestId;
