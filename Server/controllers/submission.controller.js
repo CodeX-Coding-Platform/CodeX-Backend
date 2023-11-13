@@ -109,7 +109,7 @@ exports.validateSubmission = async (req, res) => {
     //check if contest is active
     const contest = await contestUtil.getOneContest(req.body.contestId);
     const isContestActive = await contestUtil.isContestActive(contest);
-    if(!isContestActive && !req.body.isAdmin) {
+    if(!isContestActive && !req.decoded.admin) {
       return responseUtil.sendResponse(res, false, null, "Contest is not active", 400);
     }
     // get the question testcases
