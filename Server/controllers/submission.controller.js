@@ -85,23 +85,23 @@ exports.findUser = (req, res) => {
 
 exports.validateSubmission = async (req, res) => {
   //validations
-  if (req.body.contestId === null) {
+  if (req.body.contestId === undefined) {
     return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
   }
   
-  if (req.body.questionId === null) {
+  if (req.body.questionId === undefined) {
     return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
   }
 
-  if (req.body.username === null) {
+  if (req.body.username === undefined) {
     return responseUtil.sendResponse(res, false, null, "Username cannot be empty", 400);
   }
   
-  if (req.body.sourceCode === null) {
+  if (req.body.sourceCode === undefined) {
     return responseUtil.sendResponse(res, false, null, "sourceCode cannot be empty", 400);
   }
   
-  if (req.body.languageId === null) {
+  if (req.body.languageId === undefined) {
     return responseUtil.sendResponse(res, false, null, "languageId cannot be empty", 400);
   }
 

@@ -92,11 +92,11 @@ exports.create = (req, res) => {
     req.body.password2 = req.body.confirmPassword;
   }
   if (
-    req.body.email === null ||
-    req.body.username === null ||
-    req.body.password === null ||
-    req.body.name === null ||
-    req.body.branch === null
+    req.body.email === undefined ||
+    req.body.username === undefined ||
+    req.body.password === undefined ||
+    req.body.name === undefined ||
+    req.body.branch === undefined
   ) {
     return res.status(400).send({
       success: false,
@@ -242,7 +242,7 @@ exports.create = (req, res) => {
 
 // Update a user identified by the username in the request
 exports.update = (req, res) => {
-  if (req.body.username === null || req.body.password === null) {
+  if (req.body.username === undefined || req.body.password === undefined) {
     return res.status(400).send({
       success: false,
       message: "User content can not be empty",
@@ -279,10 +279,10 @@ exports.update = (req, res) => {
 exports.updateOne = async (req, res) => {
   // 1
   if (
-    req.body.email === null ||
-    req.body.newPassword === null ||
-    req.body.password === null ||
-    req.body.name === null
+    req.body.email === undefined ||
+    req.body.newPassword === undefined ||
+    req.body.password === undefined ||
+    req.body.name === undefined
   ) {
     return responseUtil.sendResponse(res,false,null,"details can not be empty!",404);
   }

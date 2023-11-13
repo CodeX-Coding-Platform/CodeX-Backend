@@ -87,7 +87,7 @@ const updateParticipation = async(participationId, data) => {
 const modifyScore = async(data) => {
     try {
         const participation = await getOneParticipation(data.participationId);
-        if(participation === null) {
+        if(participation === undefined) {
             return Promise.reject(new Error("Participation does not exist with participationId "+data.participationId));
         }
         //update participation with latest score if score is greater than previous

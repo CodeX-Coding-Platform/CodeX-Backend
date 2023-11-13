@@ -19,7 +19,7 @@ var questionCode = process.env.questionCode
 // Create and Save a new question
 exports.create = async (req, res) => {
   // Validate request
-  if (req.body.questionName === null) {
+  if (req.body.questionName === undefined) {
     return responseUtil.sendResponse(res, false, null, "Question name can not be empty", 400);
   }
   try {
@@ -135,7 +135,7 @@ exports.createExcel = (req, res) => {
 // Retrieve and return all questions from the database.
 exports.getAllQuestions = async (req, res) => {
   try {
-    const filters = req.query.queryString.split(",");
+    const filters = (req.query.queryString !== undefined) ? req.query.queryString.split(",") : [];
     const questions = await questionUtil.getAllQuestions(questionUtil.decodeFilters(filters));
     return responseUtil.sendResponse(res, true, questions, "Questions retrieved successfully", 200);
   } catch (error) {
@@ -146,10 +146,10 @@ exports.getAllQuestions = async (req, res) => {
 // Find a single question with a questionId
 exports.findOneQuestion = async (req, res) => {
   try {
-    if(req.params.questionId === null) {
+    if(req.params.questionId === undefined) {
       return responseUtil.sendResponse(res, false, null, "questionId is not provided", 400); 
     }
-    const question = await questionUtil.getOneQuestion(req.params.questionId, (req.isAdmin)?{}:questionUtil.decodeFilters(req.filters));
+    const question = await questionUtil.getOneQuestion(req.params.questionId, (req.isAdmin)?{}:questionUtil.decodeFilters(filters));
     return responseUtil.sendResponse(res, true, question, "Question retrieved successfully", 200); 
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
@@ -158,7 +158,7 @@ exports.findOneQuestion = async (req, res) => {
 
 // Update a question identified by the questionId in the request
 exports.updateQuestion = async (req, res) => {
-  if (req.params.questionId === null) {
+  if (req.params.questionId === undefined) {
     return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
   }
   try {
@@ -171,7 +171,7 @@ exports.updateQuestion = async (req, res) => {
 
 // Delete a question with the specified questionId in the request
 exports.deleteQuestion = async (req, res) => {
-  if (req.params.questionId === null) {
+  if (req.params.questionId === undefined) {
     return responseUtil.sendResponse(res, false, null, "QuestionId cannot be empty", 400);
   }
   try {
@@ -184,7 +184,7 @@ exports.deleteQuestion = async (req, res) => {
 
 // Delete questions with the specified questionIds in the request
 exports.deleteMultiple = async(req, res) => {
-  if (req.body.questionIds === null) {
+  if (req.body.questionIds === undefined) {
     return responseUtil.sendResponse(res, false, null, "QuestionIds cannot be empty", 400);
   }
   try {
@@ -217,7 +217,7 @@ const getQuestions = async(contest) => {
 
 // Gets all questions of a specific contest and creates/ fetches participation
 exports.getAllQuestionsRelatedToContest = async (req, res) => {
-  if (req.params.contestId === null) {
+  if (req.params.contestId === undefined) {
     return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
   }
   try {

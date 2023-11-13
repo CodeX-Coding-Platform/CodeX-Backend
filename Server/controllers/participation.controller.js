@@ -7,20 +7,20 @@ var moment = require("moment");
 exports.create = async (req, res) => {
   req.body.username = req.decoded.username;
   // Validate request
-  if (req.body.username === null) {
+  if (req.body.username === undefined) {
     return res.status(400).send({
       success: false,
       message: "user Id can not be empty",
     });
   }
 
-  if (req.body.branch === null && req.body.username !== "admin") {
+  if (req.body.branch === undefined && req.body.username !== "admin") {
     return res.status(400).send({
       success: false,
       message: "user Branch can not be empty",
     });
   }
-  if (req.body.contestId  === null) {
+  if (req.body.contestId  === undefined) {
     return res.status(400).send({
       success: false,
       message: "contest Id can not be empty",
