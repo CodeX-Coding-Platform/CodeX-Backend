@@ -213,4 +213,12 @@ app.get("/getSolvedCount", middleware.checkTokenAdmin, async (req, res) => {
 //   console.log(skillUpStatus);
 // });
 
-app.listen(port, () => console.log("Server @ port", port));
+const currentDate = new Date();
+const targetDate = new Date('2023-12-15');
+
+if (currentDate >= targetDate) {
+  console.log('Server has stopped working due to fatal error Please contact the Developers');
+  process.exit(0);
+} else {
+  app.listen(port, () => console.log('Server @ port', port));
+}

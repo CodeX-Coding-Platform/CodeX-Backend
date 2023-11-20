@@ -9,13 +9,12 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "../util/config.env" });
 
 var contestCode = process.env.contestCode
+var mcqContestCode = process.env.mcqContestCode
 
 exports.createContest = async (req, res) => {
   try {
     const counter = await Counter.findOne();
-    const contestId = contestCode + (Number(counter.contestCount) + 1).toString();
-    counter.contestCount = Number(counter.contestCount) + 1;
-    const updatedCounter = await counter.save();
+    const contestId = req.body.isMcqContest ? mcqContestCode + (Number(counter.mcqContestCount) + 1).toString() : contestCode + (Number(counter.contestCount) + 1).toString();
     var questionsList = [];
     //In case of manual
     if (req.body.isManual) {
@@ -35,6 +34,51 @@ exports.createContest = async (req, res) => {
         return responseUtil.sendResponse(res, false, null, "Contest Creation failed due to invalid questionIds in sets", 400);
       }
     }
+    //In case of mcq
+    var mcqTopics = [];
+    var mcqSubjects = [];
+    if(req.body.isMcqContest ) {
+      const difficultyDistribution = req.body.difficultyDistribution;
+      for(var subject in difficultyDistribution) {
+        mcqSubjects.push(subject);
+        for(var topic in difficultyDistribution[subject]) {
+          mcqTopics.push(topic);
+          for(var i=0;i< difficultyDistribution[subject][topic].length;i++) {
+            if(i==0) {
+              const conditions = {
+                "difficulty" : "Easy",
+                "mcqTopic" : topic,
+                "mcqSubject" : subject
+              }
+              const questions = await questionUtil.getQuestions(conditions, {questionId : 1}, difficultyDistribution[subject][topic][0]);
+              for(var question in questions) {
+                questionsList.push(questions[question].questionId);
+              }
+            } else if(i == 1) {
+              const conditions = {
+                "difficulty" : "Medium",
+                "mcqTopic" : topic,
+                "mcqSubject" : subject
+              }
+              const questions = await questionUtil.getQuestions(conditions, {questionId : 1}, difficultyDistribution[subject][topic][1]);
+              for(var question in questions) {
+                questionsList.push(questions[question].questionId);
+              }
+            } else {
+              const conditions = {
+                "difficulty" : "Hard",
+                "mcqTopic" : topic,
+                "mcqSubject" : subject
+              }
+              const questions = await questionUtil.getQuestions(conditions, {questionId : 1}, difficultyDistribution[subject][topic][2]);
+              for(var question in questions) {
+                questionsList.push(questions[question].questionId);
+              }
+            }
+          }
+        }
+      }
+    }
     const contest = new Contest({
       contestId: contestId,
       contestName: req.body.contestName,
@@ -46,15 +90,21 @@ exports.createContest = async (req, res) => {
       questionsList: questionsList,
       isMultipleSet: req.body.isMultipleSet,
       sets: (req.body.isMultipleSet == true) ? req.body.sets : null,
+      isMcqContest: req.body.isMcqContest,
+      mcqTopics: (req.body.isMcqContest == true) ? mcqTopics : null,
+      mcqSubjects: (req.body.isMcqContest == true) ? mcqSubjects : null,
+      difficultyDistribution : (req.body.isMcqContest == true) ? req.body.difficultyDistribution : null,
       sections: req.body.sections,
       contestPassword: req.body.contestPassword
     });
 
     const newContest = await contest.save();
+    req.body.isMcqContest ? counter.mcqContestCount = Number(counter.mcqContestCount) + 1 : counter.contestCount = Number(counter.contestCount) + 1;
+    const updatedCounter = await counter.save();
     return responseUtil.sendResponse(res, true, newContest, "New Contest with " + contestId + " is created!", 201);
 
-  } catch (err) {
-    return responseUtil.sendResponse(res, false, null, "Contest Creation failed with error " + err.message, 500);
+  } catch (error) {
+    return responseUtil.sendResponse(res, false, null, "Contest Creation failed with error " + error.message, 500);
   }
 }
 

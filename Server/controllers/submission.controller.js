@@ -1,4 +1,5 @@
 const Submission = require("../models/submission.model.js");
+const Participation = require("../models/participation.model.js");
 var moment = require("moment");
 
 const contestUtil = require("../services/contestUtil.js");
@@ -117,6 +118,32 @@ exports.validateSubmission = async (req, res) => {
     const judgeResponse = await judgeUtil.sendRequestsToJudge(testcases, req.body);
     // Create the submission
     return responseUtil.sendResponse(res, true, judgeResponse, "Submission validated successfully", 200);
+  } catch(error) {
+    return responseUtil.sendResponse(res, false, null, error.message, 400);
+  }
+}
+
+exports.validateMCQSubmission = async(req, res) => {
+  if (req.body.contestId === undefined) {
+    return responseUtil.sendResponse(res, false, null, "ContestId cannot be empty", 400);
+  }
+
+  if (req.body.username === undefined) {
+    return responseUtil.sendResponse(res, false, null, "Username cannot be empty", 400);
+  }
+  try {
+    //check if contest is active
+    const contest = await contestUtil.getOneContest(req.body.contestId);
+    const isContestActive = await contestUtil.isContestActive(contest);
+    if(!isContestActive && !req.decoded.admin) {
+      return responseUtil.sendResponse(res, false, null, "Contest is not active", 400);
+    }
+    // get the correct options
+    const responseMap = await questionUtil.getCorrectOptionsTopicsAndSubjectsMap(contest.questionsList);
+    const participationId = req.body.username.toLowerCase() +  req.body.contestId;
+    const participation = await Participation.findOne({participationId : participationId});
+    const evaluateResponse = await submissionUtil.evaluateMCQResponse(participationId, req.body.responses, responseMap.questionIdToCorrectOptionMap, responseMap.questionIdToSubject, responseMap.questionIdToTopic, participation); 
+    return responseUtil.sendResponse(res, true, evaluateResponse, "MCQ Submission validated successfully", 200);
   } catch(error) {
     return responseUtil.sendResponse(res, false, null, error.message, 400);
   }

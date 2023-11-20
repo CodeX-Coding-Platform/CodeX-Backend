@@ -16,7 +16,12 @@ var participationSchema = new Schema({
     endContest: {
         type: Number,
         default: 0,
-    }
+    },
+    // mcq
+    mcqResponses : Object,
+    mcqSubjectScore : Object,
+    mcqTopicScore : Object,
+    mcqTotalScore : Number
 });
 
 module.exports = mongoose.model("Participation", participationSchema)

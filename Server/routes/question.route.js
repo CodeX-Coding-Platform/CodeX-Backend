@@ -5,6 +5,8 @@ module.exports = (app) => {
 
     // Create a new question
     app.post("/question", middleware.checkTokenAdmin, questions.create);
+    // Create a new mcq question
+    app.post("/mcqQuestion", middleware.checkTokenAdmin, questions.createMcqQuestion);
 
     // Create a new question Excel
     app.post(

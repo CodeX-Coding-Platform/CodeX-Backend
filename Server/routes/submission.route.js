@@ -20,6 +20,9 @@ module.exports = (app) => {
   //judge a submission
   app.post("/validateSubmission", middleware.checkToken, submissions.validateSubmission);
 
+  //judge a MCQ submission
+  app.post("/validateMCQSubmission", middleware.checkToken, submissions.validateMCQSubmission);
+
   // app.get("/submissions/gen/:questionId", submissions.genSource);
 
   app.get("/submission/profile/:username", submissions.findProfileData);

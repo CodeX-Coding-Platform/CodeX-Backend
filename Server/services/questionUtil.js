@@ -1,4 +1,9 @@
 const Question = require("../models/question.model.js");
+const Tag = require("../models/tag.model.js");
+const Counter = require("../models/counter.model.js");
+
+const tagUtil = require("./tagUtil");
+const counterUtil = require("./counterUtil");
 
 const getOneQuestion = async (questionId, filters) => {
     try {
@@ -9,9 +14,18 @@ const getOneQuestion = async (questionId, filters) => {
     }
 }
 
-const getMultipleQuestions = async(questionIds, filters) => {
+const getQuestions = async(conditions, filters, limit) => {
     try {
-        const question = await Question.find({ questionId: {$in : questionIds} }, filters);
+        const question = await Question.find(conditions, filters).limit(limit);
+        return question;
+    } catch (error) {
+        return Promise.reject(new Error(err.message));
+    }
+}
+
+const getMultipleQuestions = async (questionIds, filters) => {
+    try {
+        const question = await Question.find({ questionId: { $in: questionIds } }, filters);
         return question;
     } catch (error) {
         return Promise.reject(new Error(err.message));
@@ -76,11 +90,11 @@ const getQuestionTestCases = async (questionId) => {
         const question = await getOneQuestion(questionId, {});
 
         if (!question) {
-            return Promise.reject(new Error("No Question with the given questionId "+questionId));
+            return Promise.reject(new Error("No Question with the given questionId " + questionId));
         }
 
         const testcases = {
-            questionId : question.questionId,
+            questionId: question.questionId,
             HI1: question.questionHiddenInput1,
             HI2: question.questionHiddenInput2,
             HI3: question.questionHiddenInput3,
@@ -100,10 +114,77 @@ const getQuestionTestCases = async (questionId) => {
 
 const decodeFilters = (filters) => {
     var questionFilters = {};
-    for(var filter in filters) {
+    for (var filter in filters) {
         questionFilters[filters[filter]] = 1;
     }
     return questionFilters;
+}
+
+const updateTagAndCounter = async (data) => {
+    const tags = await Tag.findOne({});
+    const counter = await Counter.findOne({});
+    var mcqSubject = data.mcqSubject;
+    var mcqTopic = data.mcqTopic;
+    var updatedTags = null;
+    var updatedCounter = null;
+    if (tags.mcqSubjects === undefined || !tags.mcqSubjects.hasOwnProperty(mcqSubject)) {
+        var newSubjectTag = {
+            [mcqSubject] : [mcqTopic]
+        }
+        tags.mcqSubjects = {
+            ...tags.mcqSubjects,
+            ...newSubjectTag,
+        };
+        const newCounter = {
+            [mcqSubject]: {
+                [mcqTopic]: [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0]
+            },
+        }
+        counter.subjectCount = {
+            ...counter.subjectCount,
+            ...newCounter,
+        };
+        updatedTags = await tags.save();
+        updatedCounter = await counter.save();
+    } else {
+        if (!tags.mcqSubjects[mcqSubject].includes(mcqTopic)) {
+            const mcqSubjects = tags.mcqSubjects;
+            mcqSubjects[mcqSubject].push(mcqTopic);
+            updatedTags = await tagUtil.pushTopic(mcqSubjects);
+            const subjectCount = counter.subjectCount;
+            subjectCount[mcqSubject][mcqTopic] = [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0];
+            updatedCounter = await counterUtil.pushTopic(subjectCount);
+        } else {
+            const incrementIndex = data.difficulty === "Easy" ? 0 : data.difficulty === "Medium" ? 1 : data.difficulty === "Hard" ? 2 : -1;
+            const subjectCount = counter.subjectCount;
+            subjectCount[mcqSubject][mcqTopic][incrementIndex]+=1;
+            updatedCounter = await counterUtil.pushTopic(subjectCount);
+        }
+        updatedCounter = await counter.save();
+    }
+    return { updatedTags, updatedCounter };
+}
+
+const getCorrectOptionsTopicsAndSubjectsMap = async (questionsList) => {
+    try {
+        const questions = await getMultipleQuestions(questionsList);
+        var questionIdToCorrectOptionMap = new Map();
+        var questionIdToTopic = new Map();
+        var questionIdToSubject = new Map();
+        for (let i = 0; i < questions.length; i++) {
+            questionIdToCorrectOptionMap.set(questions[i].questionId, questions[i].correctOption);
+            questionIdToTopic.set(questions[i].questionId, questions[i].mcqTopic);
+            questionIdToSubject.set(questions[i].questionId, questions[i].mcqSubject);
+        }
+
+        return {questionIdToCorrectOptionMap, questionIdToTopic, questionIdToSubject};
+
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            throw new Error("Couldn't find question, caught exception");
+        }
+        throw new Error("Error retrieving data");
+    }
 }
 
 module.exports = {
@@ -112,8 +193,11 @@ module.exports = {
     updateQuestion,
     getAllQuestions,
     getOneQuestion,
+    getQuestions,
     getMultipleQuestions,
     getQuestionTestCases,
     deleteMultipleQuestions,
-    decodeFilters
+    decodeFilters,
+    updateTagAndCounter,
+    getCorrectOptionsTopicsAndSubjectsMap
 }

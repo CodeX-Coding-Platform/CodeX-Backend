@@ -34,7 +34,7 @@ var questionSchema = new Schema({
         type: Boolean,
         default: false,
     },
-    mcqOptions : Array,
+    options : Array,
     correctOption: String,
     mcqImage : {
         data : Buffer,

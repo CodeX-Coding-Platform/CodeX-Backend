@@ -63,9 +63,13 @@ const createParticipation = async (participationId, data) => {
         branch: data.branch,
         contestId: data.contestId,
         participationTime: date,
-        submissionResults: [],
+        submissionResults: {},
         validTill: endTime,
-        questionsList: data.questionsList
+        questionsList: data.questionsList,
+        mcqResponses : {},
+        mcqSubjectScore : {},
+        mcqTopicScore : {},
+        mcqTotalScore : 0
     });
     try {
         const newParticipation = await participation.save();
@@ -142,6 +146,7 @@ module.exports = {
     getOneParticipation,
     getAllParticipations,
     getAllParticipationsContest,
+    updateParticipation,
     createParticipation,
     modifyScore,
     isValidParticipationTime

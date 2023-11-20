@@ -189,34 +189,50 @@ exports.getLeaderboard = async(req,res) => {
     return responseUtil.sendResponse(res,false,null,"ContestId cannot be empty",400);
   }
   try {
-
     const contest = await contestUtil.getOneContest(req.params.contestId);
-    var questionIds = [];
-    if(contest.isMultipleSet) {
-      const questionIdSet = new Set();
-      const sets = contest.sets;
-      for(const set of sets) {
-        for(const questionId of set){
-          questionIdSet.add(questionId);
-        }
+    if(contest.isMcqContest === true) {
+      const participations = await participationUtil.getAllParticipationsContest(contest.contestId);
+      var mcqContestResults = [];
+      var mcqTopicsAndSubjects = {};
+      mcqTopicsAndSubjects["mcqTopics"] = contest.mcqTopics;
+      mcqTopicsAndSubjects["mcqSubjects"] = contest.mcqSubjects;
+      mcqContestResults.push(mcqTopicsAndSubjects);
+      for(var participation in participations) {
+        var userResult = {};
+        userResult["username"] = participations[participation].username;
+        userResult["mcqTopicScore"] = participations[participation].mcqTopicScore;
+        userResult["mcqSubjectScore"] = participations[participation].mcqSubjectScore;
+        mcqContestResults.push(userResult)
       }
-      questionIds = Array.from(questionIdSet);
+      return responseUtil.sendResponse(res,true,mcqContestResults,"Leaderboard Fetched Successfully",200);
     } else {
-      questionIds = contest.questionsList;
-    }
-    const participations = await participationUtil.getAllParticipationsContest(req.params.contestId);
-    var contestResults = [];
-    for(var participation in participations) {
-      var userResult = {};
-      userResult["username"] = participations[participation].username;
-      var totalScore=0;
-      for(var question in questionIds) {
-        userResult[questionIds[question]] = (participations[participation].submissionResults[questionIds[question]] !== undefined) ? participations[participation].submissionResults[questionIds[question]] : "Not Attempted";
-        totalScore += (userResult[questionIds[question]] !== "Not Attempted") ? userResult[questionIds[question]] : 0;
+      var questionIds = [];
+      if(contest.isMultipleSet) {
+        const questionIdSet = new Set();
+        const sets = contest.sets;
+        for(const set of sets) {
+          for(const questionId of set){
+            questionIdSet.add(questionId);
+          }
+        }
+        questionIds = Array.from(questionIdSet);
+      } else {
+        questionIds = contest.questionsList;
       }
-      contestResults.push(userResult);
+      const participations = await participationUtil.getAllParticipationsContest(req.params.contestId);
+      var contestResults = [];
+      for(var participation in participations) {
+        var userResult = {};
+        userResult["username"] = participations[participation].username;
+        var totalScore=0;
+        for(var question in questionIds) {
+          userResult[questionIds[question]] = (participations[participation].submissionResults[questionIds[question]] !== undefined) ? participations[participation].submissionResults[questionIds[question]] : "Not Attempted";
+          totalScore += (userResult[questionIds[question]] !== "Not Attempted") ? userResult[questionIds[question]] : 0;
+        }
+        contestResults.push(userResult);
+      }
+      return responseUtil.sendResponse(res,true,contestResults,"Leaderboard Fetched Successfully",200);
     }
-    return responseUtil.sendResponse(res,true,contestResults,"Leaderboard Fetched Successfully",200);
   } catch(error) {
     return responseUtil.sendResponse(res,false,null,error.message,400);
   }

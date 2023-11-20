@@ -17,6 +17,11 @@ var contestSchema = new Schema({
   sections : Array,
   contestPassword: String,
   visibility: { type: Boolean, default: true },
+  //mcq
+  isMcqContest : Boolean,
+  mcqSubjects : Array,
+  mcqTopics : Array,
+  difficultyDistribution : Object
 });
 
 module.exports = mongoose.model("Contest", contestSchema);
