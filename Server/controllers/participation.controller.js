@@ -202,6 +202,7 @@ exports.getLeaderboard = async(req,res) => {
         userResult["username"] = participations[participation].username;
         userResult["mcqTopicScore"] = participations[participation].mcqTopicScore;
         userResult["mcqSubjectScore"] = participations[participation].mcqSubjectScore;
+        userResult["TotalScore"] = participations[participation].mcqTotalScore;
         mcqContestResults.push(userResult)
       }
       return responseUtil.sendResponse(res,true,mcqContestResults,"Leaderboard Fetched Successfully",200);
