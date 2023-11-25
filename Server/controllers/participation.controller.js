@@ -200,9 +200,9 @@ exports.getLeaderboard = async(req,res) => {
       for(var participation in participations) {
         var userResult = {};
         userResult["username"] = participations[participation].username;
-        userResult["mcqTopicScore"] = participations[participation].mcqTopicScore;
-        userResult["mcqSubjectScore"] = participations[participation].mcqSubjectScore;
-        userResult["TotalScore"] = participations[participation].mcqTotalScore;
+        userResult["mcqTopicScore"] = participations[participation].mcqTopicScore || {};
+        userResult["mcqSubjectScore"] = participations[participation].mcqSubjectScore || {};
+        userResult["TotalScore"] = participations[participation].mcqTotalScore || 0;
         mcqContestResults.push(userResult)
       }
       return responseUtil.sendResponse(res,true,mcqContestResults,"Leaderboard Fetched Successfully",200);

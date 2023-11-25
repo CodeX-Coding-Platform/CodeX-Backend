@@ -37,7 +37,7 @@ const runSubmission = async (data) => {
             language_id: data.languageId,
             stdin: data.input,
         },
-        url: postUrl,
+        url: postUrl+"?base64_encoded=true",
     }
 
     const token = await getSubmissionToken(options);

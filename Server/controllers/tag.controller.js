@@ -116,7 +116,6 @@ exports.updateTags = async(req, res) => {
                 }
             }
         }
-        console.log(key, value);
     }
 
     tag.topicTags = newTopicTags;
