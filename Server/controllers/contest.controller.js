@@ -111,7 +111,7 @@ exports.createContest = async (req, res) => {
 // Retrieve and return all contests from the database.
 exports.getAllContests = async (req, res) => {
   try {
-    const contests = await contestUtil.getAllContests();
+    const contests = await contestUtil.getAllContests(req.params.isMcq === "mcq");
     responseUtil.sendResponse(res, true, contests, "All contests fetched successfully!", 200);
   } catch (error) {
     responseUtil.sendResponse(res, false, null, "An error occurred while fetching all contests", 500);

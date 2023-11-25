@@ -84,12 +84,15 @@ exports.updateTags = async(req, res) => {
     }
     const topicTags = req.body.topicTags;
     const companyTags = req.body.companyTags;
+    const mcqSubjects = req.body.mcqSubjects;
 
     const currentTopicTags = tag.topicTags;
     const currentCompanyTags = tag.companyTags;
+    const currentMCQSubjects = tag.mcqSubjects;
 
     const newTopicTags = currentTopicTags;
     const newCompanyTags = currentCompanyTags;
+    const newMCQSubjects = currentMCQSubjects;
 
     for (const tag of topicTags) {
         if (!currentTopicTags.includes(tag)) {
@@ -103,8 +106,22 @@ exports.updateTags = async(req, res) => {
         }
     }
 
+    for (const [key, value] of Object.entries(mcqSubjects)) {
+        if(currentMCQSubjects[key] === undefined) {
+            newMCQSubjects[key] = value;
+        } else {
+            for(const topic of value) {
+                if (!currentMCQSubjects[key].includes(topic)) {
+                    newMCQSubjects[key].push(topic);
+                }
+            }
+        }
+        console.log(key, value);
+    }
+
     tag.topicTags = newTopicTags;
     tag.companyTags = newCompanyTags;
+    tag.mcqSubjects = newMCQSubjects
 
     const updatedTags = await tag.save();
     return responseUtil.sendResponse(res,true,updatedTags,"Tags updated successfully",200);

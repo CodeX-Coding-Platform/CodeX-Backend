@@ -11,9 +11,9 @@ const getOneContest = async(contestId) => {
     }
 }
 
-const getAllContests = async() => {
+const getAllContests = async(isMcq) => {
     try {
-        const contests = await Contest.find({});
+        const contests = await Contest.find((isMcq) ? {isMcqContest : true} : {});
         return contests;
     } catch(error) {
         return Promise.reject(new Error(err.message));

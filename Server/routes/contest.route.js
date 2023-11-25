@@ -7,7 +7,7 @@ module.exports = (app) => {
     app.post("/contest", middleware.checkTokenAdmin, contests.createContest);
     
     // Retrieve all contests
-    app.get("/contests", middleware.checkToken, contests.getAllContests);
+    app.get("/contests/:isMcq", middleware.checkToken, contests.getAllContests);
 
     // check if contest is active
     app.get("/contest/active/:contestId",middleware.checkToken, contests.activeContest);
