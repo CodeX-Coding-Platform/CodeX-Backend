@@ -106,9 +106,9 @@ const modifyScore = async (data) => {
             return Promise.reject(new Error("Participation does not exist with participationId " + data.participationId));
         }
         //update participation with latest score if score is greater than previous
-        var results = {};
+        var results = (participation.submissionResults !== undefined) ? participation.submissionResults : {};
         var updatedParticipation = null;
-        const currentScore = (participation.submissionResults[data.questionId] !== undefined) ? participation.submissionResults[data.questionId] : Number.MAX_SAFE_INTEGER;
+        const currentScore = (participation.submissionResults !== undefined) ? (participation.submissionResults[data.questionId] !== undefined) ? participation.submissionResults[data.questionId] : Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER;
         if (Number(currentScore) < Number(data.score)) {
             results[data.questionId] = data.score;
         } else if(currentScore === Number.MAX_SAFE_INTEGER)  {

@@ -305,7 +305,8 @@ exports.getAllQuestionsRelatedToContest = async (req, res) => {
         username: req.body.username.toLowerCase(),
         branch: req.body.branch,
         contestId: req.params.contestId,
-        questionsList: []
+        questionsList: [],
+        submissionResults: {}
       };
       const exisitingParticipation = await participationUtil.getOneParticipation(participationId);
       var questionsList = [];
