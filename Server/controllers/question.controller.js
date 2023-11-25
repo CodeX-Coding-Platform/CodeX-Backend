@@ -201,7 +201,7 @@ exports.createExcel = (req, res) => {
 exports.getAllQuestions = async (req, res) => {
   try {
     const filters = (req.query.queryString !== undefined) ? req.query.queryString.split(",") : [];
-    const questions = await questionUtil.getAllQuestions(questionUtil.decodeFilters(filters));
+    const questions = await questionUtil.getAllQuestions(questionUtil.decodeFilters(filters),req.params.isMcq === "mcq");
     return responseUtil.sendResponse(res, true, questions, "Questions retrieved successfully", 200);
   } catch (error) {
     return responseUtil.sendResponse(res, false, null, "Error while fetching all Questions", 500);
