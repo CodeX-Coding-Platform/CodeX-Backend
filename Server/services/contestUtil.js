@@ -2,25 +2,30 @@ const Contest = require("../models/contest.model.js");
 
 const moment = require("moment-timezone");
 
-const getOneContest = async(contestId) => {
+const getOneContest = async (contestId) => {
     try {
-        const contest = await Contest.findOne({contestId: contestId});
+        const contest = await Contest.findOne({ contestId: contestId });
         return contest;
-    } catch(error) {
+    } catch (error) {
         return Promise.reject(new Error(err.message));
     }
 }
 
-const getAllContests = async(isMcq) => {
+const getAllContests = async (isMcq) => {
     try {
-        const contests = await Contest.find((isMcq) ? {isMcqContest : true} : {isMcqContest : false});
+        const contests = await Contest.find((isMcq) ? { isMcqContest: true } : {
+            $or: [
+                { isManual: true },
+                { isMultipleSet: true }
+            ]
+        });
         return contests;
-    } catch(error) {
+    } catch (error) {
         return Promise.reject(new Error(err.message));
     }
 }
 
-const updateContest =  async(contestId, contestUpdates) => {
+const updateContest = async (contestId, contestUpdates) => {
 
     if (contestUpdates.contestId) {
         return Promise.reject(new Error("contestId cannot be updated"));
@@ -32,19 +37,19 @@ const updateContest =  async(contestId, contestUpdates) => {
             { new: true }
         );
         return updatedContest;
-    } catch(err) {
+    } catch (err) {
         return Promise.reject(new Error(err.message));
     }
 }
 
-const deleteContest = async(contestId) => {
+const deleteContest = async (contestId) => {
     try {
-        const deletedContest = await Contest.deleteOne({contestId: contestId});
-        if(deletedContest.deletedCount === 0) {
-            return Promise.reject(new Error("Contest not found with given contestId "+contestId));
+        const deletedContest = await Contest.deleteOne({ contestId: contestId });
+        if (deletedContest.deletedCount === 0) {
+            return Promise.reject(new Error("Contest not found with given contestId " + contestId));
         }
         return deletedContest;
-    } catch(err) {
+    } catch (err) {
         return Promise.reject(new Error(err.message));
     }
 }
