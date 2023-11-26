@@ -45,7 +45,7 @@ const runSubmission = async (data) => {
         "stdout": null,
         "time": null,
         "memory": null,
-        "stderr": "Response Timed Out",
+        "stderr": btoa("Response Timed Out"),
         "token": null,
         "compile_output": null,
         "message": null,
