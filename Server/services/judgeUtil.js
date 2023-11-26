@@ -112,7 +112,7 @@ const sendRequestsToJudge = async (testcases, data) => {
                 stdin: testcases.HI3,
                 expected_output: testcases.HO3,
             },
-            url: postUrl,
+            url: postUrl+"?base64_encoded=true",
         },
     ];
 
@@ -123,7 +123,7 @@ const sendRequestsToJudge = async (testcases, data) => {
     }
 
     const statusOptions = tokens.map((token) => ({
-        url: apiAddress + "/submissions/" + token,
+        url: apiAddress + "/submissions/" + token+"?base64_encoded=true",
         method: "get",
     }));
 
