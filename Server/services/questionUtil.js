@@ -34,7 +34,7 @@ const getMultipleQuestions = async (questionIds, filters) => {
 
 const getAllQuestions = async (filters, isMcq) => {
     try {
-        const questions = await Question.find((isMcq) ? {isMcq : true} : {}, filters);
+        const questions = await Question.find((isMcq) ? {isMcq : true} : {isMcq : false}, filters);
         return questions;
     } catch (error) {
         return Promise.reject(new Error(err.message));
