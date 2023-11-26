@@ -36,10 +36,7 @@ var questionSchema = new Schema({
     },
     options : Array,
     correctOption: String,
-    mcqImage : {
-        data : Buffer,
-        contentType : String
-    },
+    mcqImage : String,
     mcqTopic : String,
     mcqSubject : String
 });
