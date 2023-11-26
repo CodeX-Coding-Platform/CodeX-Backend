@@ -115,9 +115,15 @@ exports.validateSubmission = async (req, res) => {
     }
     // get the question testcases
     const testcases = await questionUtil.getQuestionTestCases(req.body.questionId);
-    const judgeResponse = await judgeUtil.sendRequestsToJudge(testcases, req.body);
-    // Create the submission
-    return responseUtil.sendResponse(res, true, judgeResponse, "Submission validated successfully", 200);
+    try {
+      const judgeResponse = await judgeUtil.sendRequestsToJudge(testcases, req.body);
+      return responseUtil.sendResponse(res, true, judgeResponse, "Submission validated successfully", 200);
+    } catch(error) {
+      return responseUtil.sendResponse(res, true, {
+        "score" : 0,
+        "message" : "Submission could not be validated"
+      }, "Submission could not be validated", 200);
+    }
   } catch(error) {
     return responseUtil.sendResponse(res, false, null, error.message, 400);
   }
