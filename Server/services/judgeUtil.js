@@ -55,7 +55,7 @@ const runSubmission = async (data) => {
     }
     try {
         const statusOption = {
-            url: apiAddress + "/submissions/" + token,
+            url: apiAddress + "/submissions/" + token + "?base64_encoded=true",
             method: "get",
         }
         var statusResponse = await getSubmissionStatus(statusOption);
