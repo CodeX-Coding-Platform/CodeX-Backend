@@ -1,6 +1,6 @@
 const Tag = require("../models/tag.model.js");
 
-const pushTopic = async (updates) => {
+const pushSubjectAndTopic = async (updates) => {
     const updatedTag = await Tag.updateMany(
         {},
         { 
@@ -15,5 +15,5 @@ const pushTopic = async (updates) => {
 }
 
 module.exports = {
-    pushTopic
+    pushSubjectAndTopic
 }

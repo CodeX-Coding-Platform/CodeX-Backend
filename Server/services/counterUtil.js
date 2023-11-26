@@ -1,6 +1,6 @@
 const Counter = require("../models/counter.model.js");
 
-const pushTopic = async(updates) => {
+const updateCounter = async(updates) => {
     const updatedCounter = await Counter.updateMany(
         {},
         { 
@@ -15,5 +15,5 @@ const pushTopic = async(updates) => {
 }
 
 module.exports = {
-    pushTopic
+    updateCounter
 }

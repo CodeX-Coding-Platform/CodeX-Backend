@@ -1,6 +1,7 @@
 const Tag = require("../models/tag.model.js");
 
 const responseUtil = require("../services/responseUtil.js");
+const tagUtil = require("../services/tagUtil.js");
 
 exports.initiateTags = async (req, res) => {
     try {
@@ -82,13 +83,13 @@ exports.updateTags = async(req, res) => {
     if (!tag) {
         return responseUtil.sendResponse(res,false,null,"Tags are not initiated",500);
     }
-    const topicTags = req.body.topicTags;
-    const companyTags = req.body.companyTags;
-    const mcqSubjects = req.body.mcqSubjects;
+    const topicTags = req.body.topicTags || [];
+    const companyTags = req.body.companyTags || [];
+    const mcqSubjects = req.body.mcqSubjects || {};
 
-    const currentTopicTags = tag.topicTags;
-    const currentCompanyTags = tag.companyTags;
-    const currentMCQSubjects = tag.mcqSubjects;
+    const currentTopicTags = tag.topicTags || [];
+    const currentCompanyTags = tag.companyTags || [];
+    const currentMCQSubjects = tag.mcqSubjects || {};
 
     const newTopicTags = currentTopicTags;
     const newCompanyTags = currentCompanyTags;
@@ -120,7 +121,8 @@ exports.updateTags = async(req, res) => {
 
     tag.topicTags = newTopicTags;
     tag.companyTags = newCompanyTags;
-    tag.mcqSubjects = newMCQSubjects
+    await tagUtil.pushSubjectAndTopic(newMCQSubjects);
+
 
     const updatedTags = await tag.save();
     return responseUtil.sendResponse(res,true,updatedTags,"Tags updated successfully",200);

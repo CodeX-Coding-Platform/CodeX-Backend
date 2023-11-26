@@ -80,8 +80,8 @@ const createParticipation = async (participationId, data) => {
 }
 
 const updateParticipation = async (participationId, data) => {
-    if (data.participationId) {
-        return Promise.reject(new Error("questionId cannot be updated"));
+    if (data.participationId === undefined) {
+        return Promise.reject(new Error("participationId is not provided"));
     }
 
     try {

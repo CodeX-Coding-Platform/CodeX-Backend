@@ -10,6 +10,8 @@ exports.createCounter = async (req, res) => {
       contestCount: 0,
       weekCount: 0,
       skillCount: new Date(),
+      mcqCount : 0,
+      subjectCount : {}
     });
     try {
       const newCounter = await counter.save();

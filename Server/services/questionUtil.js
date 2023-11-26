@@ -121,48 +121,62 @@ const decodeFilters = (filters) => {
 }
 
 const updateTagAndCounter = async (data) => {
-    const tags = await Tag.findOne({});
     const counter = await Counter.findOne({});
     var mcqSubject = data.mcqSubject;
     var mcqTopic = data.mcqTopic;
-    var updatedTags = null;
-    var updatedCounter = null;
-    if (tags.mcqSubjects === undefined || !tags.mcqSubjects.hasOwnProperty(mcqSubject)) {
-        var newSubjectTag = {
-            [mcqSubject] : [mcqTopic]
-        }
-        tags.mcqSubjects = {
-            ...tags.mcqSubjects,
-            ...newSubjectTag,
-        };
-        const newCounter = {
-            [mcqSubject]: {
-                [mcqTopic]: [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0]
-            },
-        }
-        counter.subjectCount = {
-            ...counter.subjectCount,
-            ...newCounter,
-        };
-        updatedTags = await tags.save();
-        updatedCounter = await counter.save();
-    } else {
-        if (!tags.mcqSubjects[mcqSubject].includes(mcqTopic)) {
-            const mcqSubjects = tags.mcqSubjects;
-            mcqSubjects[mcqSubject].push(mcqTopic);
-            updatedTags = await tagUtil.pushTopic(mcqSubjects);
-            const subjectCount = counter.subjectCount;
-            subjectCount[mcqSubject][mcqTopic] = [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0];
-            updatedCounter = await counterUtil.pushTopic(subjectCount);
-        } else {
+    var subjectCount = counter.subjectCount || {};
+    //check if subject exists
+    if(subjectCount.hasOwnProperty(mcqSubject)) {
+        //check if topic exists in counter
+        if(subjectCount[mcqSubject][mcqTopic] !== undefined) {
             const incrementIndex = data.difficulty === "Easy" ? 0 : data.difficulty === "Medium" ? 1 : data.difficulty === "Hard" ? 2 : -1;
-            const subjectCount = counter.subjectCount;
             subjectCount[mcqSubject][mcqTopic][incrementIndex]+=1;
-            updatedCounter = await counterUtil.pushTopic(subjectCount);
+        } else {
+            subjectCount[mcqSubject][mcqTopic] = [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0];
         }
-        updatedCounter = await counter.save();
+    } else {
+        const newTopic = {
+            [mcqTopic] : [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0]
+        }
+        subjectCount[mcqSubject] = newTopic;
     }
-    return { updatedTags, updatedCounter };
+    const updatedCounter = await counterUtil.updateCounter(subjectCount);
+    // if (tags.mcqSubjects === undefined || !tags.mcqSubjects.hasOwnProperty(mcqSubject)) {
+    //     var newSubjectTag = {
+    //         [mcqSubject] : [mcqTopic]
+    //     }
+    //     tags.mcqSubjects = {
+    //         ...tags.mcqSubjects,
+    //         ...newSubjectTag,
+    //     };
+    //     const newCounter = {
+    //         [mcqSubject]: {
+    //             [mcqTopic]: [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0]
+    //         },
+    //     }
+    //     counter.subjectCount = {
+    //         ...counter.subjectCount,
+    //         ...newCounter,
+    //     };
+    //     updatedTags = await tags.save();
+    //     updatedCounter = await counter.save();
+    // } else {
+    //     if (!tags.mcqSubjects[mcqSubject].includes(mcqTopic)) {
+    //         const mcqSubjects = tags.mcqSubjects;
+    //         mcqSubjects[mcqSubject].push(mcqTopic);
+    //         updatedTags = await tagUtil.pushTopic(mcqSubjects);
+    //         const subjectCount = counter.subjectCount;
+    //         subjectCount[mcqSubject][mcqTopic] = [data.difficulty === "Easy" ? 1 : 0, data.difficulty === "Medium" ? 1 : 0, data.difficulty === "Hard" ? 1 : 0];
+    //         updatedCounter = await counterUtil.pushTopic(subjectCount);
+    //     } else {
+    //         const incrementIndex = data.difficulty === "Easy" ? 0 : data.difficulty === "Medium" ? 1 : data.difficulty === "Hard" ? 2 : -1;
+    //         const subjectCount = counter.subjectCount;
+    //         subjectCount[mcqSubject][mcqTopic][incrementIndex]+=1;
+    //         updatedCounter = await counterUtil.pushTopic(subjectCount);
+    //     }
+    //     updatedCounter = await counter.save();
+    // }
+    return updatedCounter;
 }
 
 const getCorrectOptionsTopicsAndSubjectsMap = async (questionsList) => {
