@@ -1,5 +1,7 @@
 const Counter = require("../models/counter.model.js");
 
+const responseUtil = require("../services/responseUtil");
+
 exports.createCounter = async (req, res) => {
   const counter = await Counter.findOne();
   if(!counter) {

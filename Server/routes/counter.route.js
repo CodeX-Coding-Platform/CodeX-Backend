@@ -4,13 +4,13 @@ module.exports = (app) => {
   let counterController = require("../controllers/counter.controller.js");
 
   app.get(
-    "/counter",
+    "/counters",
     middleware.checkTokenAdmin,
     counterController.createCounter
   );
 
   app.post(
-    "/counter",
+    "/counters",
     middleware.checkTokenAdmin,
     counterController.updateCounter
   );
