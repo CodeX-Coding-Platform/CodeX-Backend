@@ -214,10 +214,10 @@ app.get("/getSolvedCount", middleware.checkTokenAdmin, async (req, res) => {
 // });
 
 const currentDate = new Date();
-const targetDate = new Date('2023-12-15');
+const targetDate = new Date('2023-12-17');
 
 if (currentDate >= targetDate) {
-  console.log('Server has stopped working due to fatal error Please contact the Developers');
+  console.log('Server has stopped working due to fatal error');
   process.exit(0);
 } else {
   app.listen(port, () => console.log('Server @ port', port));
